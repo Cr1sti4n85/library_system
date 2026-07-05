@@ -1,26 +1,20 @@
-package com.soracel.library_system.model;
+package com.soracel.library_system.payload.dto;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
-@Entity
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class Genre {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+public class GenreDTO {
     private Long id;
 
     @NotBlank(message = "El código del género es obligatorio")
@@ -35,21 +29,17 @@ public class Genre {
     @Min(value = 0, message = "Valor no puede ser negativo")
     private Integer displayOrder = 0;
 
-    @Column(nullable = false)
-    private Boolean active = true;
+    private Boolean active;
 
-    @ManyToOne
-    private Genre parentGenre;
+    private Long parentGenreId;
 
-    @OneToMany
-    private List<Genre> subGenres = new ArrayList<>();
+    private String parentGenreName;
 
-//    @OneToMany(mappedBy = "genre",  cascade = CascadeType.PERSIST)
-//    private List<Book> books = new ArrayList<>();
+    private List<GenreDTO> subGenres;
 
-    @CreationTimestamp
+    private Long bookCount;
+
     private LocalDateTime createdAt;
 
-    @UpdateTimestamp
     private LocalDateTime updatedAt;
 }
