@@ -3,6 +3,7 @@ spring:
     name: library_system
   datasource:
     url: ${DB_URL}
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
