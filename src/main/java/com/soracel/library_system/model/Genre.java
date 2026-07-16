@@ -18,9 +18,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "genres")
 public class Genre {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotBlank(message = "El código del género es obligatorio")
@@ -36,12 +37,15 @@ public class Genre {
     private Integer displayOrder = 0;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     @ManyToOne
+    @JoinColumn(name = "parent_genre_id")
     private Genre parentGenre;
 
-    @OneToMany
+    @OneToMany(mappedBy = "parentGenre", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Genre> subGenres = new ArrayList<>();
 
 //    @OneToMany(mappedBy = "genre",  cascade = CascadeType.PERSIST)

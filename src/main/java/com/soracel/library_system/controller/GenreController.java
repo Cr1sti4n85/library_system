@@ -6,10 +6,9 @@ import com.soracel.library_system.service.GenreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,5 +21,11 @@ public class GenreController {
         GenreDTO createdGenre = genreService.createGenre(genre);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdGenre);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<GenreDTO>> getAllGenres() {
+        List<GenreDTO> genres = genreService.getAllGenres();
+        return ResponseEntity.status(HttpStatus.OK).body(genres);
     }
 }
