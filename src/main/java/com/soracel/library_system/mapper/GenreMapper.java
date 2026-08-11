@@ -46,4 +46,20 @@ public class GenreMapper {
                 .active(true)
                 .build();
     }
+
+    public static void updateEntityFromDto(GenreDTO dto,  Genre existingGenre){
+        if (dto == null || existingGenre == null){
+            return;
+        }
+
+        existingGenre.setCode(dto.getCode());
+        existingGenre.setName(dto.getName());
+        existingGenre.setDescription(dto.getDescription());
+        existingGenre.setDisplayOrder(dto.getDisplayOrder() != null ?  dto.getDisplayOrder() : 0);
+
+        if (dto.getActive() != null){
+            existingGenre.setActive(dto.getActive());
+        }
+
+    }
 }
