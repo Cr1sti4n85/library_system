@@ -3,6 +3,8 @@ package com.soracel.library_system.mapper;
 import com.soracel.library_system.model.Genre;
 import com.soracel.library_system.payload.dto.GenreDTO;
 
+import java.util.List;
+
 public class GenreMapper {
     public static GenreDTO toDTO(Genre genre){
         if (genre == null){
@@ -61,5 +63,9 @@ public class GenreMapper {
             existingGenre.setActive(dto.getActive());
         }
 
+    }
+
+    public static List<GenreDTO> toDTOList(List<Genre> genreList){
+        return genreList.stream().map(GenreMapper::toDTO).toList();
     }
 }
