@@ -5,6 +5,7 @@ import com.soracel.library_system.exception.GenreException;
 import com.soracel.library_system.model.Genre;
 import com.soracel.library_system.payload.dto.GenreDTO;
 import com.soracel.library_system.service.GenreService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
@@ -21,7 +22,7 @@ public class GenreController {
     private final GenreService genreService;
 
     @PostMapping
-    public ResponseEntity<GenreDTO> addGenre(@RequestBody GenreDTO genre) {
+    public ResponseEntity<GenreDTO> addGenre(@Valid @RequestBody GenreDTO genre) {
         GenreDTO createdGenre = genreService.createGenre(genre);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdGenre);
@@ -34,45 +35,45 @@ public class GenreController {
     }
 
     @GetMapping("/{genreId}")
-    public ResponseEntity<GenreDTO> getGenreById(@RequestParam long genreId) throws GenreException {
+    public ResponseEntity<GenreDTO> getGenreById(@RequestParam long genreId) {
         GenreDTO genre = genreService.getGenreById(genreId);
         return ResponseEntity.status(HttpStatus.OK).body(genre);
     }
 
     @PutMapping("/{genreId}")
     public ResponseEntity<GenreDTO> updateGenre(@PathVariable Long genreId,
-                                                @RequestBody GenreDTO genre) throws GenreException {
+                                                @Valid @RequestBody GenreDTO genre) {
 
         GenreDTO updatedGenre = genreService.updateGenre(genreId, genre);
         return ResponseEntity.status(HttpStatus.OK).body(updatedGenre);
     }
 
     @DeleteMapping("/{genreId}")
-    public ResponseEntity<GenreDTO> deleteGenre(@PathVariable Long genreId) throws GenreException {
+    public ResponseEntity<GenreDTO> deleteGenre(@PathVariable Long genreId) {
         genreService.deleteGenre(genreId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{genreId}/hard")
-    public ResponseEntity<GenreDTO> hardDeleteGenre(@PathVariable Long genreId) throws GenreException {
+    public ResponseEntity<GenreDTO> hardDeleteGenre(@PathVariable Long genreId) {
         genreService.hardDeleteGenre(genreId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/top-level")
-    public ResponseEntity<List<GenreDTO>> getTopLevel() throws GenreException {
+    public ResponseEntity<List<GenreDTO>> getTopLevel() {
         List<GenreDTO> topLevelGenres = genreService.getTopLevelGenres();
         return ResponseEntity.ok(topLevelGenres);
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Long> getTotalActiveGenres() throws GenreException {
+    public ResponseEntity<Long> getTotalActiveGenres() {
         Long total = genreService.getTotalActiveGenres();
         return ResponseEntity.ok(total);
     }
 
     @GetMapping("/{id}/book-count")
-    public ResponseEntity<Long> getBookCountByGenre(@PathVariable Long id) throws GenreException {
+    public ResponseEntity<Long> getBookCountByGenre(@PathVariable Long id) {
         Long count = genreService.getBookCountByGenre(id);
         return ResponseEntity.ok(count);
     }
