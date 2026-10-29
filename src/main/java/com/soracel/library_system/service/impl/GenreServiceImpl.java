@@ -1,6 +1,7 @@
 package com.soracel.library_system.service.impl;
 
 import com.soracel.library_system.exception.GenreException;
+import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.mapper.GenreMapper;
 import com.soracel.library_system.model.Genre;
 import com.soracel.library_system.payload.dto.GenreDTO;
@@ -41,7 +42,7 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public GenreDTO getGenreById(Long id)  {
         Genre genre = genreRepository.findById(id).orElseThrow(
-                () -> new GenreException("Género no encontrado")
+                () -> new NotFoundException("Género no encontrado")
         );
         return  GenreMapper.toDTO(genre);
     }
@@ -49,7 +50,7 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public GenreDTO updateGenre(Long id, GenreDTO genreDto) {
         Genre existingGenre = genreRepository.findById(id).orElseThrow(
-                () -> new GenreException("Género no encontrado")
+                () -> new NotFoundException("Género no encontrado")
         );
 
         GenreMapper.updateEntityFromDto(genreDto, existingGenre);
@@ -67,7 +68,7 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public void deleteGenre(Long id) {
         Genre existingGenre = genreRepository.findById(id).orElseThrow(
-                () -> new GenreException("Género no encontrado")
+                () -> new NotFoundException("Género no encontrado")
         );
         existingGenre.setActive(false);
         genreRepository.save(existingGenre);
@@ -76,7 +77,7 @@ public class GenreServiceImpl implements GenreService {
     @Override
     public void hardDeleteGenre(Long id) {
         Genre existingGenre = genreRepository.findById(id).orElseThrow(
-                () -> new GenreException("Género no encontrado")
+                () -> new NotFoundException("Género no encontrado")
         );
         genreRepository.delete(existingGenre);
     }

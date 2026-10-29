@@ -1,67 +1,91 @@
 package com.soracel.library_system.service.impl;
 
 import com.soracel.library_system.exception.BookException;
+import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.mapper.BookMapper;
 import com.soracel.library_system.model.Book;
 import com.soracel.library_system.model.Genre;
 import com.soracel.library_system.payload.dto.BookDTO;
 import com.soracel.library_system.payload.request.BookSearchRequest;
 import com.soracel.library_system.payload.response.PageResponse;
+import com.soracel.library_system.repository.BookRepository;
 import com.soracel.library_system.repository.GenreRepository;
 import com.soracel.library_system.service.BookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class BookServiceImpl implements BookService {
 
+    private final BookRepository bookRepository;
     private final GenreRepository genreRepository;
 
     @Override
     public BookDTO createBook(BookDTO bookDTO) {
+
+        if (bookRepository.existsByIsbn(bookDTO.getIsbn())) {
+            throw new BookException("Libro con ISBN " + bookDTO.getIsbn() + " ya existe");
+        }
         Book newBook = BookMapper.toEntity(bookDTO);
 
         if (bookDTO.getGenreId() != null){
             Genre genre = genreRepository.findById(bookDTO.getGenreId()).orElseThrow(
-                    () -> new BookException("Género no encontrado"));
+                    () -> new NotFoundException("Género no encontrado"));
             newBook.setGenre(genre);
         }
-        return null;
+
+        Book savedBook = bookRepository.save(newBook);
+
+        return BookMapper.toDTO(savedBook);
     }
 
     @Override
     public List<BookDTO> createBooksBulk(List<BookDTO> bookDTOList) {
-        return List.of();
-    }
 
-    @Override
-    public BookDTO updateBook(BookDTO bookDTO) {
-
-//        if (bookDTO.getGenreId() != null){
-//            Genre genre = genreRepository.findById(bookDTO.getGenreId()).orElseThrow(
-//                    () -> new BookException("Género no encontrado"));
-//            newBook.setGenre(genre);
-//        }
-
-        return null;
+        List<BookDTO> createdBooks =  new ArrayList<>();
+        for (BookDTO bookDTO : bookDTOList) {
+            BookDTO book = createBook(bookDTO);
+            createdBooks.add(book);
+        }
+        return  createdBooks;
     }
 
     @Override
     public BookDTO getBookById(Long bookId) {
-        return null;
+
+        Book book = bookRepository.findById(bookId).orElseThrow(() -> new NotFoundException("Libro no encontrado"));
+        return BookMapper.toDTO(book);
     }
 
     @Override
     public BookDTO getBookByISBN(String isbn) {
-        return null;
+
+        Book book = bookRepository.findByIsbn(isbn)
+                .orElseThrow(() -> new BookException("No hay resultados para el ISBN ingresado"));
+
+        return BookMapper.toDTO(book);
     }
 
     @Override
     public BookDTO updateBook(Long bookId, BookDTO bookDTO) {
-        return null;
+
+        Book existingBook = bookRepository.findById(bookId)
+                .orElseThrow(() -> new NotFoundException("Libro no encontrado"));
+
+        BookMapper.updateEntityFromDTO(bookDTO, existingBook);
+
+        if (bookDTO.getGenreId() != null){
+            Genre genre = genreRepository.findById(bookDTO.getGenreId()).orElseThrow(
+                    () -> new NotFoundException("Género no encontrado"));
+            existingBook.setGenre(genre);
+        }
+        Book savedBook =  bookRepository.save(existingBook);
+
+        return BookMapper.toDTO(savedBook);
     }
 
     @Override

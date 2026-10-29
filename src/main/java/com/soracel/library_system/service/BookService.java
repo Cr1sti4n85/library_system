@@ -11,7 +11,6 @@ public interface BookService {
     BookDTO createBook(BookDTO bookDTO);
 
     List<BookDTO> createBooksBulk(List<BookDTO> bookDTOList);
-    BookDTO updateBook(BookDTO bookDTO);
     BookDTO getBookById(Long bookId);
     BookDTO getBookByISBN(String isbn);
     BookDTO updateBook(Long bookId, BookDTO bookDTO);

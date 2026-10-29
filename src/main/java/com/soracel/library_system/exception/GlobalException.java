@@ -10,8 +10,23 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalException {
 
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiResponse> handleNotFoundException(NotFoundException ex) {
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(GenreException.class)
     public ResponseEntity<ApiResponse> handleGenreException(GenreException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
+    @ExceptionHandler(BookException.class)
+    public ResponseEntity<ApiResponse> handleBookException(BookException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 new ApiResponse(ex.getMessage(), false)
         );
