@@ -72,4 +72,13 @@ public class BookDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    @AssertTrue(message = "Las copias disponibles no pueden exceder el total de copias")
+    public boolean isAvailableCopiesValid() {
+        if (totalCopies == null || availableCopies == null) {
+            return true;
+        }
+
+        return availableCopies <= totalCopies;
+    }
+
 }

@@ -66,13 +66,6 @@ public class Book {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    @AssertTrue(message = "Las copias disponibles no pueden exceder el total de copias")
-    public boolean isAvailableCopiesValid() {
-        if (this.totalCopies == null || this.availableCopies == null) {
-            return true;
-        }
-        return this.availableCopies <= this.totalCopies;
-    }
 
 }
 
