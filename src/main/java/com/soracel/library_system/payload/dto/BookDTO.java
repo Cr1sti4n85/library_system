@@ -63,6 +63,8 @@ public class BookDTO {
     @Size(max = 500, message = "La URL de la imagen no debe exceder los 500 caracteres")
     private String coverimageUrl;
 
+    private Boolean active;
+
     private Boolean alreadyBorrowed;
 
     private Boolean alreadyReserved;
