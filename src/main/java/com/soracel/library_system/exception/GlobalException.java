@@ -1,11 +1,15 @@
 package com.soracel.library_system.exception;
 
 import com.soracel.library_system.payload.response.ApiResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalException {
@@ -30,6 +34,20 @@ public class GlobalException {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 new ApiResponse(ex.getMessage(), false)
         );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse> handleConstraintViolation(
+            ConstraintViolationException ex) {
+
+        String message = ex.getConstraintViolations()
+                .stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining(", "));
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse(message, false));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
