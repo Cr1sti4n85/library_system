@@ -81,6 +81,8 @@ public class BookServiceImpl implements BookService {
         Book existingBook = bookRepository.findById(bookId)
                 .orElseThrow(() -> new NotFoundException("Libro no encontrado"));
 
+        //TODO: validate total copies can't be less than the sum of available + borrowed
+
         BookMapper.updateEntityFromDTO(bookDTO, existingBook);
 
         if (bookDTO.getGenreId() != null){
@@ -123,7 +125,7 @@ public class BookServiceImpl implements BookService {
         Page<Book> bookPage = bookRepository.searchBooksWithFilters(
                 searchRequest.getSearchTerm(),
                 searchRequest.getGenreId(),
-                searchRequest.isAvailableOnly(),
+                searchRequest.getAvailableOnly(),
                 pageable
         );
 

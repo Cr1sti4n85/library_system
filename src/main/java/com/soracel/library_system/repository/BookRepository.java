@@ -23,12 +23,12 @@ public interface BookRepository extends JpaRepository<Book, Long> {
             "lower(b.isbn) LIKE lower(concat ('%', :searchTerm, '%')) " +
             ") " +
             "AND (:genreId IS NULL OR b.genre.id = :genreId) " +
-            "AND (:availableOnly = false OR b.availableCopies>0) " +
+            "AND (:availableOnly IS NULL OR :availableOnly = false OR b.availableCopies>0) " +
             "AND b.active=true")
     Page<Book> searchBooksWithFilters(
             @Param("searchTerm") String searchTerm,
             @Param("genreId") Long genreId,
-            @Param("availableOnly") boolean availableOnly,
+            @Param("availableOnly") Boolean availableOnly,
             Pageable pageable
     );
 

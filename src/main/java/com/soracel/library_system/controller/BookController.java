@@ -56,11 +56,34 @@ public class BookController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/search")
-    public ResponseEntity<PageResponse<BookDTO>> advancedSearch(@RequestBody BookSearchRequest searchRequest){
+    @GetMapping
+    public ResponseEntity<PageResponse<BookDTO>> searchBooks(
+            @RequestParam(required = false) Long genreId,
+            @RequestParam(required = false, defaultValue = "false") Boolean availableOnly,
+            @RequestParam(defaultValue = "true") Boolean activeOnly,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection
+            ) {
+        BookSearchRequest searchRequest = new BookSearchRequest();
+        searchRequest.setGenreId(genreId);
+        searchRequest.setAvailableOnly(availableOnly);
+        searchRequest.setPage(page);
+        searchRequest.setPageSize(size);
+        searchRequest.setSortBy(sortBy);
+        searchRequest.setSortDirection(sortDirection);
+
         PageResponse<BookDTO> books = bookService.searchBooksWithFilters(searchRequest);
         return ResponseEntity.status(HttpStatus.OK).body(books);
     }
+
+//    @PostMapping("/search")
+//    public ResponseEntity<PageResponse<BookDTO>> advancedSearch(
+//            @RequestBody(required = false) BookSearchRequest searchRequest){
+//        PageResponse<BookDTO> books = bookService.searchBooksWithFilters(searchRequest);
+//        return ResponseEntity.status(HttpStatus.OK).body(books);
+//    }
 
     @GetMapping("/stats")
     public ResponseEntity<BookStatsResponse> getBookStats(){
