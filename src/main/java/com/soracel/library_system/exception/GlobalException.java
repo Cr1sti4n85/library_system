@@ -36,6 +36,13 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(InvalidEmailException.class)
+    public ResponseEntity<ApiResponse> handleInvalidEmailException(BookException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse> handleConstraintViolation(
             ConstraintViolationException ex) {

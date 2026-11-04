@@ -29,6 +29,8 @@ import java.util.List;
 @Component
 @AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtUtil jwtUtil;
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
@@ -37,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = getTokenFromRequest(request);
         if (token != null) {
             try {
-                SecretKey key = Keys.hmacShaKeyFor(JwtUtil.SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+                SecretKey key = Keys.hmacShaKeyFor(jwtUtil.SECRET_KEY.getBytes(StandardCharsets.UTF_8));
                 Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
 
                 String email = claims.get("email", String.class);
@@ -60,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
-        String token = request.getHeader(JwtUtil.JWT_HEADER);
+        String token = request.getHeader(jwtUtil.JWT_HEADER);
         if (token != null && token.startsWith("Bearer ")) {
             return token.substring(7);
         }
