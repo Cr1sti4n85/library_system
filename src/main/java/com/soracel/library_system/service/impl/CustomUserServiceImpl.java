@@ -3,7 +3,7 @@ package com.soracel.library_system.service.impl;
 
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,12 +12,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 
 @Service
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class CustomUserServiceImpl implements UserDetailsService {
     private final UserRepository userRepository;
     @Override

@@ -37,7 +37,14 @@ public class GlobalException {
     }
 
     @ExceptionHandler(InvalidEmailException.class)
-    public ResponseEntity<ApiResponse> handleInvalidEmailException(BookException ex) {
+    public ResponseEntity<ApiResponse> handleInvalidEmailException(InvalidEmailException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiResponse> handleInvalidCredentialsException(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 new ApiResponse(ex.getMessage(), false)
         );
