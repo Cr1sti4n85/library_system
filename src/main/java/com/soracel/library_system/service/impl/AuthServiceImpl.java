@@ -5,23 +5,26 @@ import com.soracel.library_system.domain.UserRole;
 import com.soracel.library_system.exception.InvalidCredentialsException;
 import com.soracel.library_system.exception.InvalidEmailException;
 import com.soracel.library_system.mapper.UserMapper;
+import com.soracel.library_system.model.PasswordResetToken;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.UserDTO;
 import com.soracel.library_system.payload.response.AuthResponse;
+import com.soracel.library_system.repository.PasswordResetTokenRepository;
 import com.soracel.library_system.repository.UserRepository;
 import com.soracel.library_system.service.AuthService;
+import com.soracel.library_system.service.EmailService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil  jwtUtil;
     private final CustomUserServiceImpl customUserService;
+    private final PasswordResetTokenRepository  passwordResetTokenRepository;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse signup(UserDTO request) {
@@ -91,9 +96,24 @@ public class AuthServiceImpl implements AuthService {
         return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
     }
 
-    @Override
+    @Transactional
     public void createPasswordResetToken(String email) {
+        String frontEndURL = "";
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new InvalidEmailException("Email no existe"));
+        String token = UUID.randomUUID().toString();
 
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusMinutes(10))
+                .build();
+        passwordResetTokenRepository.save(resetToken);
+        String resetLink = frontEndURL + token;
+        String subject = "Restablecimiento de contraseña";
+        String body = "Has enviado una solicitud para restablecer tu contraseña. Usa el siguiente enlace, el cual" +
+                "será válido durante los próximos 10 minutos: " + resetLink;
+
+        emailService.sendEmail(user.getEmail(), subject, body);
     }
 
     @Override
