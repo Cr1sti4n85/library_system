@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,15 +34,18 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse signup(UserDTO request) {
-        User user = userRepository
-                .findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidEmailException("El correo electrónico ya está en uso."));
+        Optional<User> user = userRepository
+                .findByEmail(request.getEmail());
+
+        if  (user.isPresent()) {
+            throw  new InvalidEmailException("Email ya existe");
+        }
 
         User newUser = User.builder()
-                .email(user.getEmail())
-                .password(passwordEncoder.encode(user.getPassword()))
-                .phone(user.getPhone())
-                .fullName(user.getFullName())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .fullName(request.getFullName())
                 .lastLogin(LocalDateTime.now())
                 .role(UserRole.ROLE_USER)
                 .build();
