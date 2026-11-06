@@ -2,8 +2,10 @@ package com.soracel.library_system.service.impl;
 
 import com.soracel.library_system.configurations.JwtUtil;
 import com.soracel.library_system.domain.UserRole;
+import com.soracel.library_system.exception.ExpiredTokenException;
 import com.soracel.library_system.exception.InvalidCredentialsException;
 import com.soracel.library_system.exception.InvalidEmailException;
+import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.mapper.UserMapper;
 import com.soracel.library_system.model.PasswordResetToken;
 import com.soracel.library_system.model.User;
@@ -98,17 +100,17 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional
     public void createPasswordResetToken(String email) {
-        String frontEndURL = "";
+        String frontEndURL = "http://localhost:5173/";
         User user = userRepository.findByEmail(email).orElseThrow(() -> new InvalidEmailException("Email no existe"));
-        String token = UUID.randomUUID().toString();
+        String temporaryToken = UUID.randomUUID().toString();
 
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token)
+                .token(temporaryToken)
                 .user(user)
                 .expiryDate(LocalDateTime.now().plusMinutes(10))
                 .build();
         passwordResetTokenRepository.save(resetToken);
-        String resetLink = frontEndURL + token;
+        String resetLink = frontEndURL + temporaryToken;
         String subject = "Restablecimiento de contraseña";
         String body = "Has enviado una solicitud para restablecer tu contraseña. Usa el siguiente enlace, el cual" +
                 "será válido durante los próximos 10 minutos: " + resetLink;
@@ -116,8 +118,22 @@ public class AuthServiceImpl implements AuthService {
         emailService.sendEmail(user.getEmail(), subject, body);
     }
 
-    @Override
-    public void resetPassword(String token, String newPassword) {
+    @Transactional
+    public void resetPassword(String resetToken, String newPassword) {
+        PasswordResetToken foundResetToken =  passwordResetTokenRepository
+                .findByToken(resetToken)
+                .orElseThrow(() -> new NotFoundException("El token proporcionado no es válido"));
+
+        if (foundResetToken.isTokenExpired()){
+            //remove token from db
+            passwordResetTokenRepository.delete(foundResetToken);
+            throw new ExpiredTokenException("El token proporcionado ha expirado");
+        }
+
+        User user = foundResetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        passwordResetTokenRepository.delete(foundResetToken);
 
     }
 }

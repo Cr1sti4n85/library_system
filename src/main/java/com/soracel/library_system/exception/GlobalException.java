@@ -50,6 +50,13 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(ExpiredTokenException.class)
+    public ResponseEntity<ApiResponse> handleExpiredTokenException(ExpiredTokenException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse> handleConstraintViolation(
             ConstraintViolationException ex) {
