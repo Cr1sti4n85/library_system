@@ -57,14 +57,11 @@ public class AuthServiceImpl implements AuthService {
                 .role(UserRole.ROLE_USER)
                 .build();
         userRepository.save(newUser);
-        Authentication auth =  new UsernamePasswordAuthenticationToken(newUser.getEmail(), newUser.getPassword());
-        String jwt = jwtUtil.generateToken(auth);
         return  AuthResponse.builder()
                 .message("Registro correcto")
                 .title("Bienvenido")
                 .user(UserMapper.toDTO(newUser))
-                .jwt(jwt).build();
-
+                .build();
     }
 
     public AuthResponse login(String username, String password) {
