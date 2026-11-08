@@ -21,13 +21,6 @@ import java.util.List;
 public class GenreController {
     private final GenreService genreService;
 
-    @PostMapping
-    public ResponseEntity<GenreDTO> addGenre(@Valid @RequestBody GenreDTO genre) {
-        GenreDTO createdGenre = genreService.createGenre(genre);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdGenre);
-    }
-
     @GetMapping
     public ResponseEntity<List<GenreDTO>> getAllGenres() {
         List<GenreDTO> genres = genreService.getAllGenres();
@@ -38,26 +31,6 @@ public class GenreController {
     public ResponseEntity<GenreDTO> getGenreById(@PathVariable long genreId) {
         GenreDTO genre = genreService.getGenreById(genreId);
         return ResponseEntity.status(HttpStatus.OK).body(genre);
-    }
-
-    @PutMapping("/{genreId}")
-    public ResponseEntity<GenreDTO> updateGenre(@PathVariable Long genreId,
-                                                @Valid @RequestBody GenreDTO genre) {
-
-        GenreDTO updatedGenre = genreService.updateGenre(genreId, genre);
-        return ResponseEntity.status(HttpStatus.OK).body(updatedGenre);
-    }
-
-    @DeleteMapping("/{genreId}")
-    public ResponseEntity<GenreDTO> deleteGenre(@PathVariable Long genreId) {
-        genreService.deleteGenre(genreId);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{genreId}/hard")
-    public ResponseEntity<GenreDTO> hardDeleteGenre(@PathVariable Long genreId) {
-        genreService.hardDeleteGenre(genreId);
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/top-level")
