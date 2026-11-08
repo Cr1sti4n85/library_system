@@ -20,40 +20,10 @@ public class BookController {
 
     private final BookService bookService;
 
-    @PostMapping
-    public ResponseEntity<BookDTO> createBook(@Valid @RequestBody BookDTO bookDTO) {
-        BookDTO createdBook = bookService.createBook(bookDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdBook);
-    }
-
-    @PostMapping("/bulk")
-    public ResponseEntity<List<BookDTO>> createBooks(@Valid @RequestBody List<BookDTO> booksDTO) {
-        List<BookDTO> createdBooks = bookService.createBooksBulk(booksDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdBooks);
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<BookDTO> getBook(@PathVariable Long id) {
         BookDTO bookDTO = bookService.getBookById(id);
         return ResponseEntity.status(HttpStatus.OK).body(bookDTO);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<BookDTO> updateBook(@PathVariable Long id, @Valid @RequestBody BookDTO bookDTO) {
-        BookDTO updatedBook = bookService.updateBook(id, bookDTO);
-        return ResponseEntity.status(HttpStatus.OK).body(updatedBook);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<BookDTO> deleteBook(@PathVariable Long id) {
-        bookService.deleteBook(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{id}/permanent")
-    public ResponseEntity<BookDTO> deleteBookPermanently(@PathVariable Long id) {
-        bookService.hardDeleteBook(id);
-        return ResponseEntity.noContent().build();
     }
 
     @GetMapping
