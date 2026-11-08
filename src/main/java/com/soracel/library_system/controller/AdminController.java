@@ -2,8 +2,10 @@ package com.soracel.library_system.controller;
 
 import com.soracel.library_system.payload.dto.BookDTO;
 import com.soracel.library_system.payload.dto.GenreDTO;
+import com.soracel.library_system.payload.dto.UserDTO;
 import com.soracel.library_system.service.BookService;
 import com.soracel.library_system.service.GenreService;
+import com.soracel.library_system.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +21,15 @@ public class AdminController {
 
     private final BookService bookService;
     private final GenreService genreService;
+    private final UserService userService;
 
+    //USERS
+    @GetMapping("/users")
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    //BOOKS
     @PostMapping("/books")
     public ResponseEntity<BookDTO> createBook(@Valid @RequestBody BookDTO bookDTO) {
         BookDTO createdBook = bookService.createBook(bookDTO);
@@ -49,6 +59,8 @@ public class AdminController {
         bookService.hardDeleteBook(id);
         return ResponseEntity.noContent().build();
     }
+
+    //GENRES
 
     @PostMapping("/genres")
     public ResponseEntity<GenreDTO> addGenre(@Valid @RequestBody GenreDTO genre) {
