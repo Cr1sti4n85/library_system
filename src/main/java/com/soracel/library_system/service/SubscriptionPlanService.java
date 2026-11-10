@@ -5,9 +5,9 @@ import com.soracel.library_system.payload.dto.SubscriptionPlanDTO;
 import java.util.List;
 
 public interface SubscriptionPlanService {
-    SubscriptionPlanDTO createSubscriptionPlan(SubscriptionPlanDTO sp);
+    SubscriptionPlanDTO createSubscriptionPlan(SubscriptionPlanDTO spDTO);
 
-    SubscriptionPlanDTO updateSubscriptionPlan(Long planId, SubscriptionPlanDTO sp);
+    SubscriptionPlanDTO updateSubscriptionPlan(Long planId, SubscriptionPlanDTO spDTO);
 
     void deleteSubscriptionPlan(Long planId);
 

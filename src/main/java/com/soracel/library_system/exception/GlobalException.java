@@ -57,6 +57,13 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(PlanCodeException.class)
+    public ResponseEntity<ApiResponse> handleDuplicatePlanCodeException(PlanCodeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse> handleConstraintViolation(
             ConstraintViolationException ex) {

@@ -5,7 +5,7 @@ import com.soracel.library_system.payload.dto.SubscriptionPlanDTO;
 
 public class SubscriptionPlanMapper {
 
-    public SubscriptionPlanDTO toDTO(SubscriptionPlan plan) {
+    public static SubscriptionPlanDTO toDTO(SubscriptionPlan plan) {
         if (plan == null) return null;
 
         return SubscriptionPlanDTO.builder()
@@ -29,7 +29,7 @@ public class SubscriptionPlanMapper {
                 .build();
     }
 
-    public SubscriptionPlan toEntity(SubscriptionPlanDTO dto) {
+    public static SubscriptionPlan toEntity(SubscriptionPlanDTO dto) {
         if (dto == null) return null;
 
         return SubscriptionPlan.builder()
@@ -51,7 +51,7 @@ public class SubscriptionPlanMapper {
                 .build();
     }
 
-    public void updateEntity(SubscriptionPlan plan, SubscriptionPlanDTO dto) {
+    public static void updateEntityFromDTO(SubscriptionPlan plan, SubscriptionPlanDTO dto) {
         if (dto == null || plan == null) return;
 
         if (dto.getPlanName() != null) plan.setPlanName(dto.getPlanName());
@@ -78,6 +78,5 @@ public class SubscriptionPlanMapper {
 
         if (dto.getBadgeText() != null) plan.setBadgeText(dto.getBadgeText());
 
-        dto.setUpdatedBy(dto.getUpdatedBy());
     }
 }
