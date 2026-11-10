@@ -19,6 +19,7 @@ public class SubscriptionPlanMapper {
                 .maxDaysPerBook(plan.getMaxDaysPerBook())
                 .displayOrder(plan.getDisplayOrder())
                 .adminNotes(plan.getAdminNotes())
+                .currency(plan.getCurrency())
                 .isActive(plan.getIsActive())
                 .badgeText(plan.getBadgeText())
                 .isFeatured(plan.getIsFeatured())
@@ -32,7 +33,7 @@ public class SubscriptionPlanMapper {
     public static SubscriptionPlan toEntity(SubscriptionPlanDTO dto) {
         if (dto == null) return null;
 
-        return SubscriptionPlan.builder()
+        SubscriptionPlan.SubscriptionPlanBuilder builder = SubscriptionPlan.builder()
                 .id(dto.getId())
                 .planCode(dto.getPlanCode())
                 .description(dto.getDescription())
@@ -41,14 +42,24 @@ public class SubscriptionPlanMapper {
                 .durationDays(dto.getDurationDays())
                 .maxBooksAllowed(dto.getMaxBooksAllowed())
                 .maxDaysPerBook(dto.getMaxDaysPerBook())
-                .displayOrder(dto.getDisplayOrder())
                 .adminNotes(dto.getAdminNotes())
-                .isActive(dto.getIsActive())
                 .badgeText(dto.getBadgeText())
-                .isFeatured(dto.getIsFeatured())
                 .createdBy(dto.getCreatedBy())
-                .updatedBy(dto.getUpdatedBy())
-                .build();
+                .updatedBy(dto.getUpdatedBy());
+
+        if (dto.getCurrency() != null)
+            builder.currency(dto.getCurrency());
+
+        if (dto.getDisplayOrder() != null)
+            builder.displayOrder(dto.getDisplayOrder());
+
+        if (dto.getIsActive() != null)
+            builder.isActive(dto.getIsActive());
+
+        if (dto.getIsFeatured() != null)
+            builder.isFeatured(dto.getIsFeatured());
+
+        return builder.build();
     }
 
     public static void updateEntityFromDTO(SubscriptionPlan plan, SubscriptionPlanDTO dto) {

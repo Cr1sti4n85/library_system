@@ -2,12 +2,14 @@ package com.soracel.library_system.payload.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Data
+@AllArgsConstructor
 @Builder
 public class SubscriptionPlanDTO {
 
