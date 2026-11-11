@@ -40,13 +40,19 @@ public class GenreMapper {
         if (genreDTO == null){
             return null;
         }
-        return Genre.builder()
+        Genre.GenreBuilder builder =  Genre.builder()
                 .name(genreDTO.getName())
                 .code(genreDTO.getCode())
-                .description(genreDTO.getDescription())
-                .displayOrder(genreDTO.getDisplayOrder())
-                .active(true)
-                .build();
+                .description(genreDTO.getDescription());
+
+        if (genreDTO.getDisplayOrder() != null){
+            builder.displayOrder(genreDTO.getDisplayOrder());
+        }
+        if (genreDTO.getActive() != null) {
+            builder.active(genreDTO.getActive());
+        }
+
+        return builder.build();
     }
 
     public static void updateEntityFromDto(GenreDTO dto,  Genre existingGenre){

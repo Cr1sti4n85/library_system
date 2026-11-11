@@ -34,6 +34,7 @@ public class Genre {
     private String description;
 
     @Min(value = 0, message = "Valor no puede ser negativo")
+    @Builder.Default
     private Integer displayOrder = 0;
 
     @Column(nullable = false)
@@ -45,11 +46,10 @@ public class Genre {
     private Genre parentGenre;
 
     @OneToMany(mappedBy = "parentGenre", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<Genre> subGenres = new ArrayList<>();
 
-//    @OneToMany(mappedBy = "genre",  cascade = CascadeType.PERSIST)
-//    private List<Book> books = new ArrayList<>();
+    @OneToMany(mappedBy = "genre",  cascade = CascadeType.PERSIST)
+    private List<Book> books = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
