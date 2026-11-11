@@ -8,6 +8,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 
 @Entity
@@ -45,6 +47,9 @@ public class User {
     private String profileImage;
 
     private LocalDateTime lastLogin;
+
+    @OneToMany(mappedBy = "user",  cascade = CascadeType.PERSIST)
+    private Set<Subscription> subscriptions = new HashSet<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;

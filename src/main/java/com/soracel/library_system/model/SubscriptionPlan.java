@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -57,6 +59,9 @@ public class SubscriptionPlan {
     private String badgeText;
 
     private String adminNotes;
+
+    @OneToMany(mappedBy = "plan",  cascade = CascadeType.PERSIST)
+    private Set<Subscription> subscriptions = new HashSet<>();
 
     @CreationTimestamp
     @Column(nullable = false)
