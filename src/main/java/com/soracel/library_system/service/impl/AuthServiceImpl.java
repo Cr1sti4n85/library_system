@@ -48,7 +48,6 @@ public class AuthServiceImpl implements AuthService {
             throw  new InvalidEmailException("Email ya existe");
         }
         request.setPassword(passwordEncoder.encode(request.getPassword()));
-        request.setRole(UserRole.ROLE_USER);
         request.setLastLogin(LocalDateTime.now());
 
         User newUser = UserMapper.toEntity(request);

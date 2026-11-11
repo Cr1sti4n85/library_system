@@ -43,7 +43,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 
         SubscriptionPlan existingPlan = subscriptionPlanRepository.findById(planId).orElse(null);
         if (existingPlan == null) {
-            throw new NotFoundException("El código ingresado no existe.");
+            throw new NotFoundException("El plan de suscripción proporcionado no existe");
         }
         SubscriptionPlanMapper.updateEntityFromDTO(existingPlan, spDTO);
         UserDTO currentUser = userService.getCurrentUser();

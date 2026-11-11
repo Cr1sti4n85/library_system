@@ -1,6 +1,8 @@
 package com.soracel.library_system.service.impl;
 
 
+import com.soracel.library_system.exception.InvalidCredentialsException;
+import com.soracel.library_system.exception.InvalidEmailException;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -22,7 +24,7 @@ public class CustomUserServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario inválido"));
+                .orElseThrow(() -> new InvalidCredentialsException("Las credenciales de acceso no son válidas"));
 
         GrantedAuthority grantedAuthority = new SimpleGrantedAuthority(user.getRole().toString());
 
