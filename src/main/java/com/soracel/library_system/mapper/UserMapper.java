@@ -44,7 +44,7 @@ public class UserMapper {
                 .password(userDTO.getPassword())
                 .phone(userDTO.getPhone())
                 .fullName(userDTO.getFullName())
-                .role(userDTO.getRole())
+                .lastLogin(userDTO.getLastLogin())
                 .build();
 
 

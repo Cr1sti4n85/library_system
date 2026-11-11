@@ -34,8 +34,10 @@ public class User {
 
     private String phone;
 
-    private UserRole role;
+    @Builder.Default
+    private UserRole role =  UserRole.ROLE_ADMIN;
 
+    @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
 
     private String googleId;

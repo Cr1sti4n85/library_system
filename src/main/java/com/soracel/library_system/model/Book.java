@@ -32,8 +32,8 @@ public class Book {
     @Column(nullable = false)
     private String author;
 
-    @JoinColumn(nullable = false)
-    @ManyToOne
+    @JoinColumn(name = "genre_id", nullable = false)
+    @ManyToOne(fetch =  FetchType.LAZY)
     private Genre genre;
 
     private String publisher;
@@ -56,6 +56,7 @@ public class Book {
     private String coverImageUrl;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
     @CreationTimestamp
@@ -65,7 +66,6 @@ public class Book {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-
 
 }
 

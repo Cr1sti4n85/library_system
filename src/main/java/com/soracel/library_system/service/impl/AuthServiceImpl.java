@@ -47,15 +47,10 @@ public class AuthServiceImpl implements AuthService {
         if  (user.isPresent()) {
             throw  new InvalidEmailException("Email ya existe");
         }
+        request.setPassword(passwordEncoder.encode(request.getPassword()));
+        request.setLastLogin(LocalDateTime.now());
 
-        User newUser = User.builder()
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .phone(request.getPhone())
-                .fullName(request.getFullName())
-                .lastLogin(LocalDateTime.now())
-                .role(UserRole.ROLE_USER)
-                .build();
+        User newUser = UserMapper.toEntity(request);
         userRepository.save(newUser);
         return  AuthResponse.builder()
                 .message("Registro correcto")

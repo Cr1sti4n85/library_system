@@ -41,7 +41,7 @@ public class BookMapper {
             return null;
         }
 
-        return Book.builder()
+        Book.BookBuilder builder =  Book.builder()
                 .id(bookDTO.getId())
                 .isbn(bookDTO.getIsbn())
                 .title(bookDTO.getTitle())
@@ -54,9 +54,13 @@ public class BookMapper {
                 .totalCopies(bookDTO.getTotalCopies())
                 .availableCopies(bookDTO.getAvailableCopies())
                 .price(bookDTO.getPrice())
-                .coverImageUrl(bookDTO.getCoverimageUrl())
-                .active(bookDTO.getActive())
-                .build();
+                .coverImageUrl(bookDTO.getCoverimageUrl());
+
+        if (bookDTO.getActive() != null) {
+            builder.active(bookDTO.getActive());
+        }
+        return builder.build();
+
     }
 
     public static void updateEntityFromDTO(BookDTO bookDTO, Book existingBook) {
