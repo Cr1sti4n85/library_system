@@ -1,15 +1,12 @@
 package com.soracel.library_system.controller;
 
-import com.soracel.library_system.payload.dto.BookDTO;
-import com.soracel.library_system.payload.dto.GenreDTO;
-import com.soracel.library_system.payload.dto.SubscriptionPlanDTO;
-import com.soracel.library_system.payload.dto.UserDTO;
-import com.soracel.library_system.service.BookService;
-import com.soracel.library_system.service.GenreService;
-import com.soracel.library_system.service.SubscriptionPlanService;
-import com.soracel.library_system.service.UserService;
+import com.soracel.library_system.payload.dto.*;
+import com.soracel.library_system.payload.response.ApiResponse;
+import com.soracel.library_system.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +22,7 @@ public class AdminController {
     private final GenreService genreService;
     private final UserService userService;
     private final SubscriptionPlanService subscriptionPlanService;
+    private final SubscriptionService subscriptionService;
 
     //USERS
     @GetMapping("/users")
@@ -113,4 +111,25 @@ public class AdminController {
         subscriptionPlanService.deleteSubscriptionPlan(planId);
         return ResponseEntity.noContent().build();
     }
+
+    //SUBSCRIPTIONS
+    @GetMapping("/subscriptions")
+    public ResponseEntity<List<SubscriptionDTO>> getAllSubscriptions() {
+        int page = 0;
+        int size = 10;
+        Pageable pageable = PageRequest.of(page, size);
+        List<SubscriptionDTO> dtoList = subscriptionService.getAllSubscriptions(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(dtoList);
+    }
+
+    @GetMapping("/subscriptions/deactivate-expired")
+    public ResponseEntity<ApiResponse> deactivateExpiredSubscriptions(){
+        subscriptionService.deactivateExpiredSubscriptions();
+        ApiResponse resp = ApiResponse.builder()
+                .message("Las subscripciones que han expirado han sido desactivadas")
+                .status(true)
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(resp);
+    }
+
 }

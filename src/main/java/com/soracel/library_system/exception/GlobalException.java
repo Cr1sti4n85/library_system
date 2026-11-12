@@ -64,6 +64,13 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(SubscriptionException.class)
+    public ResponseEntity<ApiResponse> handleSubscriptionException(SubscriptionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse> handleConstraintViolation(
             ConstraintViolationException ex) {

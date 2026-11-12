@@ -8,5 +8,7 @@ import java.util.List;
 public interface UserService {
 
     UserDTO getCurrentUser();
+    User getCurrentUserEntity();
     List<UserDTO> getAllUsers();
+    String getEmailFromAuth();
 }

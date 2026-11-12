@@ -43,15 +43,6 @@ public class SubscriptionMapper {
         if  (dto == null) return null;
 
         Subscription.SubscriptionBuilder builder = Subscription.builder()
-                .planName(dto.getPlanName())
-                .planCode(dto.getPlanCode())
-                .price(dto.getPrice())
-                .startDate(dto.getStartDate())
-                .endDate(dto.getEndDate())
-                .maxBooksAllowed(dto.getMaxBooksAllowed())
-                .maxDaysPerBook(dto.getMaxDaysPerBook())
-                .cancelledAt(dto.getCancelledAt())
-                .cancellationReason(dto.getCancellationReason())
                 .notes(dto.getNotes());
 
         if (dto.getIsActive() != null) {
