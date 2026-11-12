@@ -1,5 +1,6 @@
 package com.soracel.library_system.controller;
 
+import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.UserDTO;
 import com.soracel.library_system.service.UserService;
 import lombok.RequiredArgsConstructor;

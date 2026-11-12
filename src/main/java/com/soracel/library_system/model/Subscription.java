@@ -89,7 +89,7 @@ public class Subscription {
         }
     }
 
-    public void initializeFromPlan() {
+    public void initializeSubscriptionFromPlan() {
         if (plan != null) {
             this.planName = plan.getPlanName();
             this.planCode = plan.getPlanCode();
@@ -97,7 +97,7 @@ public class Subscription {
             this.maxBooksAllowed = plan.getMaxBooksAllowed();
             this.maxDaysPerBook = plan.getMaxDaysPerBook();
 
-            if (startDate != null) {
+            if (startDate == null) {
                 this.startDate = LocalDate.now();
             }
             calculateEndDate();

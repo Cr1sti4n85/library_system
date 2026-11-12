@@ -21,19 +21,22 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     @Override
     public UserDTO getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null ||
-                !authentication.isAuthenticated() ||
-                authentication instanceof AnonymousAuthenticationToken) {
-            throw new BadCredentialsException("Usuario no autenticado");
-        }
-        String email = authentication.getName();
+        String email = getEmailFromAuth();
         User user = userRepository
                 .findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("Usuario no existe"));
-
         return UserMapper.toDTO(user);
+
     }
+
+    @Override
+    public User getCurrentUserEntity() {
+        String email = getEmailFromAuth();
+        return userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("Usuario no existe"));
+    }
+
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -41,4 +44,17 @@ public class UserServiceImpl implements UserService {
 
         return UserMapper.toDTOList(users);
     }
+
+    @Override
+    public String getEmailFromAuth() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null ||
+                !authentication.isAuthenticated() ||
+                authentication instanceof AnonymousAuthenticationToken) {
+            throw new BadCredentialsException("Usuario no autenticado");
+        }
+        return authentication.getName();
+
+    }
+
 }

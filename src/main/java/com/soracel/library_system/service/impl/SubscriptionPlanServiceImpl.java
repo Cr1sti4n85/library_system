@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -69,6 +70,14 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         return plans.stream().map(
                 SubscriptionPlanMapper::toDTO
         ).toList();
+
+    }
+
+    @Override
+    public SubscriptionPlan getSubscriptionPlanById(Long planId) {
+        return subscriptionPlanRepository.findById(planId).orElseThrow(
+                () -> new NotFoundException("Plan no encontrado")
+        );
 
     }
 }

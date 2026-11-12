@@ -13,7 +13,9 @@ public interface SubscriptionService {
 
     SubscriptionDTO cancelSubscription(Long subscriptionId, String reason);
 
-    SubscriptionDTO activeSubscription(Long subscriptionId, Long payment);
+    SubscriptionDTO activateSubscription(Long subscriptionId, Long payment);
 
     List<SubscriptionDTO> getAllSubscriptions(Pageable pageable);
+
+    void deactivateExpiredSubscriptions();
 }
