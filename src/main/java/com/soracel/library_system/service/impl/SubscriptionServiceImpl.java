@@ -42,7 +42,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .toEntity(subscriptionDTO, currentUser, plan);
 
         subscription.initializeSubscriptionFromPlan();
-        subscription.setIsActive(false); //remove this after payment implementation
+//        subscription.setIsActive(false);
         //TODO: CREATE PAYMENT
 
         Subscription newSub = subscriptionRepository.save(subscription);
