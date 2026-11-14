@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,7 +35,10 @@ public class SubscriptionPlan {
     private Integer durationDays;
 
     @Column(nullable = false)
-    private Long price;
+    private BigDecimal price;
+
+    @Column(unique = true)
+    private String stripePriceId;
 
     @Builder.Default
     private String currency = "MXN";

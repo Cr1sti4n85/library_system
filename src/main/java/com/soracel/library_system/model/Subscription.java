@@ -5,9 +5,14 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -30,11 +35,14 @@ public class Subscription {
     @JoinColumn(name = "subscription_id", nullable = false)
     private SubscriptionPlan plan;
 
+    @OneToMany(mappedBy = "subscription",  cascade = CascadeType.PERSIST)
+    private List<Payment> payments = new ArrayList<>();
+
     private String planName;
 
     private String planCode;
 
-    private Long price;
+    private BigDecimal price;
 
     @Column(nullable = false)
     private Integer maxBooksAllowed;
@@ -50,10 +58,7 @@ public class Subscription {
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isActive = true;
-
-    @Builder.Default
-    private Boolean autoRenew = false;
+    private Boolean isActive = false;
 
     private LocalDateTime cancelledAt;
 

@@ -28,3 +28,7 @@ spring:
 jwt:
   secret:
     key: ${JWT_SECRET}
+
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}

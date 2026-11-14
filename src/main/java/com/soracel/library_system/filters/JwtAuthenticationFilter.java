@@ -5,7 +5,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,9 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
@@ -39,8 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = getTokenFromRequest(request);
         if (token != null) {
             try {
-                SecretKey key = Keys.hmacShaKeyFor(jwtUtil.SECRET_KEY.getBytes(StandardCharsets.UTF_8));
-                Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+                Claims claims = Jwts.parser().verifyWith(jwtUtil.getKey()).build().parseSignedClaims(token).getPayload();
 
                 String email = claims.get("email", String.class);
                 String authorities = claims.get("authorities", String.class);
@@ -62,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String getTokenFromRequest(HttpServletRequest request) {
-        String token = request.getHeader(jwtUtil.JWT_HEADER);
+        String token = request.getHeader(jwtUtil.getJWT_HEADER());
         if (token != null && token.startsWith("Bearer ")) {
             return token.substring(7);
         }

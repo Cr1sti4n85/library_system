@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -25,7 +26,7 @@ public class SubscriptionDTO {
 
     private String planName;
     private String planCode;
-    private Long price;
+    private BigDecimal price;
     private String currency;
     private LocalDate  startDate;
     private LocalDate endDate;
