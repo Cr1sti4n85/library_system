@@ -58,10 +58,7 @@ public class Subscription {
 
     @Column(nullable = false)
     @Builder.Default
-    private Boolean isActive = true;
-
-    @Builder.Default
-    private Boolean autoRenew = false;
+    private Boolean isActive = false;
 
     private LocalDateTime cancelledAt;
 

@@ -37,6 +37,9 @@ public class SubscriptionPlan {
     @Column(nullable = false)
     private BigDecimal price;
 
+    @Column(unique = true)
+    private String stripePriceId;
+
     @Builder.Default
     private String currency = "MXN";
 

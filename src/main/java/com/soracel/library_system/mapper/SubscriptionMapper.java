@@ -27,7 +27,6 @@ public class SubscriptionMapper {
                 .isActive(subscription.getIsActive())
                 .maxBooksAllowed(subscription.getMaxBooksAllowed())
                 .maxDaysPerBook(subscription.getMaxDaysPerBook())
-                .autoRenew(subscription.getAutoRenew())
                 .cancelledAt(subscription.getCancelledAt())
                 .cancellationReason(subscription.getCancellationReason())
                 .notes(subscription.getNotes())
@@ -44,13 +43,6 @@ public class SubscriptionMapper {
 
         Subscription.SubscriptionBuilder builder = Subscription.builder()
                 .notes(dto.getNotes());
-
-        if (dto.getIsActive() != null) {
-            builder.isActive(dto.getIsActive());
-        }
-        if (dto.getAutoRenew() != null) {
-            builder.autoRenew(dto.getAutoRenew());
-        }
 
         builder.user(foundUser);
         builder.plan(plan);

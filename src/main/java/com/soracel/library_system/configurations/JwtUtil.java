@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,11 +20,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Component
+@Getter
+@RequiredArgsConstructor
 public class JwtUtil {
-    public String JWT_HEADER = "Authorization";
+    private final String JWT_HEADER = "Authorization";
 
     @Value("${jwt.secret.key}")
-    public String SECRET_KEY;
+    private String SECRET_KEY;
 
     private SecretKey key;
 
@@ -36,7 +40,8 @@ public class JwtUtil {
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String roles = populateAuthorities(authorities);
         return Jwts.builder()
-                .issuedAt(new Date(new Date().getTime() + 86400000))
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 86_400_000))
                 .claim("authorities", roles)
                 .claim("email", authentication.getName())
                 .signWith(key)

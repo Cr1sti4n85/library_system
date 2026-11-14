@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -29,7 +30,7 @@ public class SubscriptionPlanDTO {
 
     @NotNull(message = "El precio es obligatorio")
     @Positive(message = "El precio debe tener valor positivo")
-    private Long price;
+    private BigDecimal price;
 
     private String currency;
 
