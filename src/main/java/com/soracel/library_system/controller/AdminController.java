@@ -2,11 +2,14 @@ package com.soracel.library_system.controller;
 
 import com.soracel.library_system.payload.dto.*;
 import com.soracel.library_system.payload.response.ApiResponse;
+import com.soracel.library_system.payments.PaymentService;
 import com.soracel.library_system.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +26,8 @@ public class AdminController {
     private final UserService userService;
     private final SubscriptionPlanService subscriptionPlanService;
     private final SubscriptionService subscriptionService;
+    private final PaymentService paymentService;
+
 
     //USERS
     @GetMapping("/users")
@@ -130,6 +135,23 @@ public class AdminController {
                 .status(true)
                 .build();
         return ResponseEntity.status(HttpStatus.OK).body(resp);
+    }
+
+    @GetMapping("/payments")
+    public ResponseEntity<Page<PaymentDTO>> getAllPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt")String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection
+    ) {
+        Sort sort = sortDirection.equalsIgnoreCase("DESC")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<PaymentDTO> payments = paymentService.getAllPayments(pageable);
+        return ResponseEntity.ok(payments);
+
     }
 
 }

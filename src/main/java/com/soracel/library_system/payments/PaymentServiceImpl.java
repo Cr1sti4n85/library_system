@@ -3,12 +3,16 @@ package com.soracel.library_system.service.impl;
 import com.soracel.library_system.domain.PaymentProvider;
 import com.soracel.library_system.domain.PaymentStatus;
 import com.soracel.library_system.domain.PaymentType;
+import com.soracel.library_system.mapper.PaymentMapper;
 import com.soracel.library_system.model.Payment;
 import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.model.User;
+import com.soracel.library_system.payload.dto.PaymentDTO;
 import com.soracel.library_system.payments.PaymentService;
 import com.soracel.library_system.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -33,5 +37,11 @@ public class PaymentServiceImpl implements PaymentService {
                 .amount(subscription.getPrice())
                 .build();
         paymentRepository.save(payment);
+    }
+
+    @Override
+    public Page<PaymentDTO> getAllPayments(Pageable pageable) {
+        Page<Payment> payments = paymentRepository.findAll(pageable);
+        return payments.map(PaymentMapper::toDTO);
     }
 }
