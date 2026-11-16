@@ -39,6 +39,13 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Usuario no existe"));
+    }
+
+
+    @Override
     public List<UserDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
 

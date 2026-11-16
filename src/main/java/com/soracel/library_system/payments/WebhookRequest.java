@@ -11,5 +11,4 @@ public class WebhookRequest {
     private Map<String, String> headers;
     private String payload;
 
-
 }

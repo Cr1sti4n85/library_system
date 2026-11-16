@@ -1,5 +1,6 @@
 package com.soracel.library_system.model;
 
+import com.soracel.library_system.domain.SubscriptionStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -38,11 +39,18 @@ public class Subscription {
     @OneToMany(mappedBy = "subscription",  cascade = CascadeType.PERSIST)
     private List<Payment> payments = new ArrayList<>();
 
+    private String customerId;
+
     private String planName;
 
     private String planCode;
 
     private BigDecimal price;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private SubscriptionStatus status = SubscriptionStatus.PENDING;
 
     @Column(nullable = false)
     private Integer maxBooksAllowed;

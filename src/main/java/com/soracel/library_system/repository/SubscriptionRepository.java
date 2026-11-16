@@ -1,5 +1,6 @@
 package com.soracel.library_system.repository;
 
+import com.soracel.library_system.domain.SubscriptionStatus;
 import com.soracel.library_system.model.Subscription;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,4 +35,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     List<Subscription> findExpiredActiveSubscriptions(
             @Param("today") LocalDate today
     );
+
+    Optional<Subscription> findByCustomerIdAndStatus(String customerId, SubscriptionStatus status);
 }

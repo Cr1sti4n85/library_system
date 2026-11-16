@@ -5,17 +5,22 @@ import com.stripe.StripeClient;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
+import com.stripe.model.Invoice;
+import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
+import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
-@Service
+@Component
 @RequiredArgsConstructor
 public class StripePaymentGateway implements PaymentGateway {
 
@@ -25,17 +30,20 @@ public class StripePaymentGateway implements PaymentGateway {
     @Value("${stripe.webhook-secret}")
     private String webhookSecretKey;
 
-    @Value("{websiteUrl}")
+    @Value("${websiteUrl}")
     private String websiteUrl;
 
     @Override
-    public CheckoutSession createCheckoutSession(String priceId) {
+    public CheckoutSession createCheckoutSession(Long userId, Long subscriptionId, String priceId) {
         StripeClient client = new StripeClient(secretKey);
 
         SessionCreateParams params = new SessionCreateParams.Builder()
                 .setUiMode(SessionCreateParams.UiMode.HOSTED_PAGE)
-                .setSuccessUrl(websiteUrl + "/?session_id={CHECKOUT_SESSION_ID}")
+                .setSuccessUrl(websiteUrl + "/success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(websiteUrl + "/cancel?session_id={CHECKOUT_SESSION_ID}")
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .putMetadata("subscriptionId", String.valueOf(subscriptionId))
+                .putMetadata("userId", String.valueOf(userId))
                 .addLineItem(new SessionCreateParams.LineItem.Builder()
                         .setQuantity(1L)
                         .setPrice(priceId)
@@ -51,55 +59,90 @@ public class StripePaymentGateway implements PaymentGateway {
         
         try {
             Session session = client.v1().checkout().sessions().create(params);
+            log.info("Session created: {}", session.toString());
+
             return new CheckoutSession(session.getUrl());
         } catch (StripeException e) {
-            log.error(e.getMessage());
+            log.error(e.toString());
             throw new PaymentException("Ocurrió un error al procesar el pago");
         }
     }
 
     @Override
-    public PaymentResult parseWebhook(WebhookRequest request){
+    public Optional<PaymentResult> parseWebhook(WebhookRequest request){
         StripeClient client = new StripeClient(secretKey);
 
         var payload = request.getPayload();
-        var signature = request.getHeaders().get("stripe-signature");
+        var signature = request.getHeaders().get("Stripe-Signature");
 
-
-        Event event = null;
+//        Event event = null;
         try {
-            event = client.constructEvent(payload, signature, webhookSecretKey);
+            Event event = client.constructEvent(payload, signature, webhookSecretKey);
+
             return switch (Objects.requireNonNull(event).getType()) {
                 case "checkout.session.completed" ->
-                     PaymentResult.builder()
-                            .paymentStatus(PaymentStatus.COMPLETED)
-                            .build();
-                    //TODO Provision the subscription and save the customer ID to your database.
-
+                    Optional.of(PaymentResult.builder()
+                            .paymentStatus(PaymentStatus.PROCESSING)
+                            .customerId(extractCustomerId(event))
+                            .metadata(extractMetadata(event))
+                            .build());
 
                 case "invoice.paid" ->
-                    PaymentResult.builder()
+                     Optional.of(PaymentResult.builder()
                             .paymentStatus(PaymentStatus.SUCCEEDED)
-                            .build();
+                             .customerId(extractCustomerId(event))
+                            .build());
 
-                //TODO Continue to provision the subscription as payments continue to be made.
-                // Store the status in your database and check when a customer accesses your service.
-                // This approach helps you avoid hitting rate limits.
                 case "invoice.payment_failed" ->
-                    PaymentResult.builder()
+                    Optional.of(PaymentResult.builder()
                             .paymentStatus(PaymentStatus.FAILED)
-                            .build();
-
-                //TODO The payment failed or the customer doesn't have a valid payment method.
-                // The subscription becomes past_due. Notify your customer and send them to the
-                // customer portal to update their payment information.
+                            .customerId(extractCustomerId(event))
+                            .build());
 
                 default ->
-                        throw new IllegalStateException("Unexpected value: " + event.getType());
+                    Optional.empty();
+
             };
         } catch (SignatureVerificationException e) {
             // Invalid signature error 400
             throw new PaymentException("Firma no válida");
         }
+    }
+
+    private Map<String, Long> extractMetadata(Event event){
+            Session session = deserializeSession(event);
+            Long userId = Long.parseLong(session.getMetadata().get("userId"));
+            Long subscriptionId = Long.parseLong(session.getMetadata().get("subscriptionId"));
+        return Map.of(
+                "userId", userId,
+                "subscriptionId", subscriptionId
+        );
+    }
+
+    private String extractCustomerId(Event event){
+        Session session = null;
+        Invoice invoice = null;
+        if (event.getType().equals("checkout.session.completed")){
+            session = deserializeSession(event);
+            return session.getCustomer();
+
+        }
+            invoice = deserializeInvoice(event);
+            return invoice.getCustomer();
+    }
+
+
+    private Session deserializeSession(Event event) {
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
+                .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
+
+        return (Session) stripeObject;
+    }
+
+    private Invoice deserializeInvoice(Event event) {
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
+                .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
+
+        return (Invoice) stripeObject;
     }
 }
