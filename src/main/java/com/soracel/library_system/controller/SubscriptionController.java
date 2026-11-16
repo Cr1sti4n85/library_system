@@ -32,23 +32,6 @@ public class SubscriptionController {
         return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 
-    @PostMapping("/{subscriptionId}")
-    public ResponseEntity<SubscriptionDTO> cancelSubscription(
-            @PathVariable Long subscriptionId,
-            @RequestParam(required = false) String reason
-    ) {
-        SubscriptionDTO dto = subscriptionService.cancelSubscription(subscriptionId, reason);
-        return ResponseEntity.status(HttpStatus.OK).body(dto);
-    }
-
-    @PatchMapping("/{subscriptionId}")
-    public ResponseEntity<SubscriptionDTO> activateSubscription(
-            @PathVariable Long subscriptionId,
-            @RequestParam Long paymentId
-    ) {
-        SubscriptionDTO dto = subscriptionService.activateSubscription(subscriptionId, paymentId);
-        return ResponseEntity.status(HttpStatus.OK).body(dto);
-    }
 
     @PostMapping("/webhook")
     public void handleWebhook(

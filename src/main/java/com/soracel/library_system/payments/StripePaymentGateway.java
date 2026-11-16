@@ -8,7 +8,6 @@ import com.stripe.model.Event;
 import com.stripe.model.Invoice;
 import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
-import com.stripe.param.InvoiceCreateParams;
 import com.stripe.param.checkout.SessionCreateParams;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -59,7 +58,6 @@ public class StripePaymentGateway implements PaymentGateway {
         
         try {
             Session session = client.v1().checkout().sessions().create(params);
-            log.info("Session created: {}", session.toString());
 
             return new CheckoutSession(session.getUrl());
         } catch (StripeException e) {
@@ -82,7 +80,7 @@ public class StripePaymentGateway implements PaymentGateway {
             return switch (Objects.requireNonNull(event).getType()) {
                 case "checkout.session.completed" ->
                     Optional.of(PaymentResult.builder()
-                            .paymentStatus(PaymentStatus.PROCESSING)
+                            .paymentStatus(PaymentStatus.COMPLETED)
                             .customerId(extractCustomerId(event))
                             .metadata(extractMetadata(event))
                             .build());
@@ -120,14 +118,12 @@ public class StripePaymentGateway implements PaymentGateway {
     }
 
     private String extractCustomerId(Event event){
-        Session session = null;
-        Invoice invoice = null;
         if (event.getType().equals("checkout.session.completed")){
-            session = deserializeSession(event);
+            Session session = deserializeSession(event);
             return session.getCustomer();
 
         }
-            invoice = deserializeInvoice(event);
+            Invoice invoice = deserializeInvoice(event);
             return invoice.getCustomer();
     }
 

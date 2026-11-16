@@ -36,5 +36,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
             @Param("today") LocalDate today
     );
 
+    Optional<Subscription> findByIdAndStatus(Long id, SubscriptionStatus status);
+
     Optional<Subscription> findByCustomerIdAndStatus(String customerId, SubscriptionStatus status);
 }

@@ -14,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +43,21 @@ public class UserServiceImpl implements UserService {
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Usuario no existe"));
+    }
+
+    @Override
+    public void updateUserCustomerId(Long id, String customerId) {
+        User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("Usuario no existe"));
+        user.setStripeCustomerId(customerId);
+        userRepository.save(user);
+    }
+
+    @Override
+    public User findByStripeCustomerId(String customerId) {
+        return userRepository
+                .findByStripeCustomerId(customerId)
+                .orElseThrow(() -> new NotFoundException("Usuario no existe"));
+
     }
 
 

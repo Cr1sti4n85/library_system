@@ -1,0 +1,24 @@
+package com.soracel.library_system.payments;
+
+import com.soracel.library_system.domain.PaymentProvider;
+import com.soracel.library_system.domain.PaymentStatus;
+import com.soracel.library_system.domain.PaymentType;
+import com.soracel.library_system.model.Subscription;
+import com.soracel.library_system.model.User;
+import com.soracel.library_system.payload.dto.PaymentDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import java.math.BigDecimal;
+
+public interface PaymentService {
+    void createSubscriptionPayment(User user,
+                          Subscription subscription,
+                          PaymentType paymentType,
+                          PaymentProvider provider,
+                          String customerId,
+                          BigDecimal amount,
+                          PaymentStatus status);
+
+    Page<PaymentDTO> getAllPayments(Pageable pageable);
+}
