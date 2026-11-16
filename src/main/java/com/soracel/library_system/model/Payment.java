@@ -45,8 +45,6 @@ public class Payment {
     @Builder.Default
     private String currency = "MXN";
 
-    private String stripePaymentIntentId;
-
     private String stripeCheckoutSessionId;
 
     private String stripeCustomerId;

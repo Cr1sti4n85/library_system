@@ -41,14 +41,6 @@ public class SubscriptionController {
         return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 
-    @PatchMapping("/{subscriptionId}")
-    public ResponseEntity<SubscriptionDTO> activateSubscription(
-            @PathVariable Long subscriptionId,
-            @RequestParam Long paymentId
-    ) {
-        SubscriptionDTO dto = subscriptionService.activateSubscription(subscriptionId, paymentId);
-        return ResponseEntity.status(HttpStatus.OK).body(dto);
-    }
 
     @PostMapping("/webhook")
     public void handleWebhook(

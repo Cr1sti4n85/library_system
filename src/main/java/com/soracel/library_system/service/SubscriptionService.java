@@ -1,7 +1,9 @@
 package com.soracel.library_system.service;
 
+import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.payload.dto.SubscriptionDTO;
 import com.soracel.library_system.payments.CheckoutSession;
+import com.soracel.library_system.payments.PaymentResult;
 import com.soracel.library_system.payments.WebhookRequest;
 import org.springframework.data.domain.Pageable;
 
@@ -15,7 +17,7 @@ public interface SubscriptionService {
 
     SubscriptionDTO cancelSubscription(Long subscriptionId, String reason);
 
-    SubscriptionDTO activateSubscription(Long subscriptionId, Long payment);
+    void activateSubscription(PaymentResult result);
 
     List<SubscriptionDTO> getAllSubscriptions(Pageable pageable);
 

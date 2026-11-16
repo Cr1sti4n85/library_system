@@ -1,7 +1,7 @@
 package com.soracel.library_system.domain;
 
 public enum PaymentStatus {
-    PROCESSING,
+    COMPLETED,
     SUCCEEDED,
     FAILED,
     CANCELLED

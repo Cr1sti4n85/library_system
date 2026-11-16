@@ -13,9 +13,7 @@ import com.soracel.library_system.model.SubscriptionPlan;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.SubscriptionDTO;
 import com.soracel.library_system.payload.dto.UserDTO;
-import com.soracel.library_system.payments.CheckoutSession;
-import com.soracel.library_system.payments.PaymentGateway;
-import com.soracel.library_system.payments.WebhookRequest;
+import com.soracel.library_system.payments.*;
 import com.soracel.library_system.repository.PaymentRepository;
 import com.soracel.library_system.repository.SubscriptionRepository;
 import com.soracel.library_system.repository.UserRepository;
@@ -39,6 +37,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final UserService userService;
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final PaymentService paymentService;
     private final PaymentGateway paymentGateway;
 
 
@@ -55,7 +54,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription newSub = subscriptionRepository.save(subscription);
 
 
-        //TODO: START CHECKOUT SESSION
         return paymentGateway.createCheckoutSession(currentUser.getId(), newSub.getId(), plan.getStripePriceId());
 
     }
@@ -88,17 +86,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public SubscriptionDTO activateSubscription(Long subscriptionId, Long payment) {
+    public void activateSubscription(PaymentResult paymentResult) {
 
-        Subscription subscription = subscriptionRepository.findById(subscriptionId)
-                .orElseThrow(() -> new NotFoundException("ID de subscripción incorrecto"));
-
-        //TODO: Verify payment
-
-        subscription.setIsActive(true);
-
-        Subscription activatedSubscription = subscriptionRepository.save(subscription);
-        return SubscriptionMapper.toDTO(activatedSubscription);
+        Subscription sub = subscriptionRepository
+                .findByIdAndStatus(paymentResult.getMetadata().get("userId"), SubscriptionStatus.PENDING)
+                .orElseThrow(() -> new NotFoundException("No se encuentra la suscripción"));
+        sub.setCustomerId(paymentResult.getCustomerId());
+        sub.setIsActive(true);
+        sub.setStatus(SubscriptionStatus.ACTIVE);
+        subscriptionRepository.save(sub);
     }
 
     @Override
@@ -122,65 +118,55 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public void handleWebhookEvent(WebhookRequest request) {
         paymentGateway.parseWebhook(request).ifPresent(paymentResult -> {
 
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.PROCESSING)) {
-                User user = userService.getUserById(paymentResult.getMetadata().get("userId"));
-                user.setStripeCustomerId(paymentResult.getCustomerId()); //an update method in user service
-                User savedUser = userRepository.save(user);
+            if (paymentResult.getPaymentStatus().equals(PaymentStatus.COMPLETED)) {
 
-                Subscription sub = subscriptionRepository.findById(paymentResult.getMetadata().get("subscriptionId"))
-                        .orElseThrow(() -> new NotFoundException("ID de subscription incorrecto"));
-                sub.setCustomerId(paymentResult.getCustomerId());
-                Subscription updatedSub = subscriptionRepository.save(sub);
+                userService.updateUserCustomerId(
+                        paymentResult.getMetadata().get("userId"),
+                        paymentResult.getCustomerId());
 
-                Payment payment = Payment.builder()  //crear Payment Service
-                        .user(savedUser)
-                        .subscription(updatedSub)
-                        .paymentProvider(PaymentProvider.STRIPE) //temporary
-                        .stripeCustomerId(paymentResult.getCustomerId())
-                        .paymentType(PaymentType.MEMBERSHIP)
-                        .status(PaymentStatus.PROCESSING)
-                        .amount(sub.getPrice())
-                        .build();
-                paymentRepository.save(payment);
+                activateSubscription(paymentResult);
 
             }
 
             if (paymentResult.getPaymentStatus().equals(PaymentStatus.SUCCEEDED)){
-                Subscription sub = subscriptionRepository
-                        .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.PENDING)
-                        .orElseThrow(() -> new NotFoundException("No se encuentra la suscripción"));
-                sub.setIsActive(true);
-                sub.setStatus(SubscriptionStatus.ACTIVE);
-                Subscription updatedSub = subscriptionRepository.save(sub);
 
-                User user = userRepository.findByStripeCustomerId(paymentResult.getCustomerId()) //quitar stripe del nombre
-                        .orElseThrow(()-> new NotFoundException("Usuario no encontrado"));
-                Payment payment = paymentRepository
-                                .getByUserSubscriptionAndStatus(
-                                        user.getId(),
-                                        updatedSub.getId(),
-                                        PaymentStatus.PROCESSING)
-                                .orElseThrow(() -> new NotFoundException("Pago no existe"));
-                payment.setStatus(PaymentStatus.SUCCEEDED);
-                paymentRepository.save(payment);
+                User user = userService.findByStripeCustomerId(paymentResult.getCustomerId());
+                Subscription activeSub = subscriptionRepository.findByCustomerIdAndStatus(paymentResult.getCustomerId(),
+                        SubscriptionStatus.ACTIVE).orElseThrow(() ->
+                        new NotFoundException("El usuario actual no tiene subscripciones activas"));
+
+                paymentService.createSubscriptionPayment(
+                        user,
+                        activeSub,
+                        PaymentType.SUBSCRIPTION,
+                        PaymentProvider.STRIPE,
+                        paymentResult.getCustomerId(),
+                        activeSub.getPrice(),
+                        PaymentStatus.SUCCEEDED
+                );
 
             }
             if (paymentResult.getPaymentStatus().equals(PaymentStatus.FAILED)){
+                User foundUser = userService.findByStripeCustomerId(paymentResult.getCustomerId());
+                //DEACTIVATE SUBSCRIPTION
                 Subscription sub = subscriptionRepository
-                        .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.PENDING)
-                        .orElseThrow(() -> new NotFoundException("No se encuentra la suscripción"));
+                        .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE)
+                        .orElseThrow(() -> new NotFoundException("Usuario no tiene suscripciones activas"));
                 sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
+                sub.setIsActive(false);
                 Subscription updatedSub = subscriptionRepository.save(sub);
 
-                Payment payment = paymentRepository
-                        .getByUserSubscriptionAndStatus(
-                                sub.getUser().getId(),
-                                updatedSub.getId(),
-                                PaymentStatus.PROCESSING)
-                        .orElseThrow(() -> new NotFoundException("Pago no existe"));
-                payment.setStatus(PaymentStatus.FAILED);
-                payment.setFailureReason("Hubo un error al procesar el pago");
-                paymentRepository.save(payment);
+                //CREATE FAILED SUBSCRIPTION PAYMENT
+                paymentService.createSubscriptionPayment(
+                        foundUser,
+                        updatedSub,
+                        PaymentType.SUBSCRIPTION,
+                        PaymentProvider.STRIPE,
+                        paymentResult.getCustomerId(),
+                        updatedSub.getPrice(),
+                        PaymentStatus.FAILED
+                );
+
 
                 //TODO notify by email
 
