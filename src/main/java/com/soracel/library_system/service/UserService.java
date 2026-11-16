@@ -11,4 +11,5 @@ public interface UserService {
     User getCurrentUserEntity();
     List<UserDTO> getAllUsers();
     String getEmailFromAuth();
+    User getUserById(Long id);
 }

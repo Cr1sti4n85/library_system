@@ -1,8 +1,10 @@
 package com.soracel.library_system.payments;
 
-public interface PaymentGateway {
-    CheckoutSession createCheckoutSession(String priceId);
+import java.util.Optional;
 
-    PaymentResult parseWebhook(WebhookRequest request);
+public interface PaymentGateway {
+    CheckoutSession createCheckoutSession(Long userId, Long subscriptionId, String priceId);
+
+    Optional<PaymentResult> parseWebhook(WebhookRequest request);
 
 }

@@ -34,13 +34,16 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     private PaymentProvider paymentProvider;
 
+    @Enumerated(EnumType.STRING)
     private PaymentType paymentType;
 
+    @Enumerated(EnumType.STRING)
     private PaymentStatus status;
 
     private BigDecimal amount;
 
-    private String currency;
+    @Builder.Default
+    private String currency = "MXN";
 
     private String stripePaymentIntentId;
 

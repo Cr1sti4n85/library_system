@@ -40,9 +40,11 @@ public class User {
     private String phone;
 
     @Builder.Default
-    private UserRole role =  UserRole.ROLE_ADMIN;
+    @Enumerated(EnumType.STRING)
+    private UserRole role =  UserRole.ROLE_USER;
 
     @Builder.Default
+    @Enumerated(EnumType.STRING)
     private AuthProvider authProvider = AuthProvider.LOCAL;
 
     private String googleId;
