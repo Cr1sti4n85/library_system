@@ -31,6 +31,7 @@ public class BookLoan {
     private Book book;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private BookLoanType loanType;
 
     @Enumerated(EnumType.STRING)
