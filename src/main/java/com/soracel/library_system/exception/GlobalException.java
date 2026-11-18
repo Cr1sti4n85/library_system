@@ -36,6 +36,13 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(LoanException.class)
+    public ResponseEntity<ApiResponse> handleBookLoanException(LoanException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(InvalidEmailException.class)
     public ResponseEntity<ApiResponse> handleInvalidEmailException(InvalidEmailException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
@@ -52,7 +59,7 @@ public class GlobalException {
 
     @ExceptionHandler(ExpiredTokenException.class)
     public ResponseEntity<ApiResponse> handleExpiredTokenException(ExpiredTokenException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
                 new ApiResponse(ex.getMessage(), false)
         );
     }

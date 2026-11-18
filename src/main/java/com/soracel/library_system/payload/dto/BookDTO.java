@@ -61,7 +61,7 @@ public class BookDTO {
     private BigDecimal price;
 
     @Size(max = 500, message = "La URL de la imagen no debe exceder los 500 caracteres")
-    private String coverimageUrl;
+    private String coverImageUrl;
 
     private Boolean active;
 

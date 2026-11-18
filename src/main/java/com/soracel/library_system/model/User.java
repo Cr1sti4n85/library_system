@@ -32,7 +32,7 @@ public class User {
     private String email;
 
     @Column(unique = true)
-    private String stripeCustomerId;
+    private String customerId;
 
     @Column(nullable = false)
     private String password;

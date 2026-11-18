@@ -4,6 +4,7 @@ import com.soracel.library_system.domain.BookLoanStatus;
 import com.soracel.library_system.domain.BookLoanType;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class BookLoanDTO {
 
     private Long id;
@@ -45,7 +47,7 @@ public class BookLoanDTO {
     @DecimalMin(value = "0.0", inclusive = true, message = "El valor no puede ser negativo")
     @Digits(integer = 6, fraction = 2, message = "La multa debe tener un máximo de 6 dígitos enteros y 2 decimales")
     private BigDecimal fineAmount;
-    private Boolean idFinePaid;
+    private Boolean isFinePaid;
     private Boolean isOverdue;
     @Positive(message = "EL valor de días debe ser número positivo")
     private Integer overdueDays;

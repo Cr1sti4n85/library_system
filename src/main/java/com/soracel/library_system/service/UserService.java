@@ -14,5 +14,5 @@ public interface UserService {
     String getEmailFromAuth();
     User getUserById(Long id);
     void updateUserCustomerId(Long id, String customerId);
-    User findByStripeCustomerId(String customerId);
+    User findByCustomerId(String customerId);
 }

@@ -37,6 +37,9 @@ public class SubscriptionPlan {
     @Column(nullable = false)
     private BigDecimal price;
 
+    @Column(nullable = false)
+    private Integer maxRenewals;
+
     @Column(unique = true)
     private String stripePriceId;
 

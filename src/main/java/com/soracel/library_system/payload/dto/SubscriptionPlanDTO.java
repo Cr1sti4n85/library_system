@@ -42,6 +42,9 @@ public class SubscriptionPlanDTO {
     @Positive(message = "La cantidad máxima de días por libro debe ser mayor a cero")
     private Integer maxDaysPerBook;
 
+    @NotNull(message = "La cantidad de renovaciones es obligatoria")
+    private Integer maxRenewals;
+
     private Integer displayOrder;
     private Boolean isActive;
     private Boolean isFeatured;

@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -32,30 +33,34 @@ public class BookLoan {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private BookLoanType loanType;
+    @Builder.Default
+    private BookLoanType loanType = BookLoanType.CHECKOUT;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private BookLoanStatus status;
+    @Builder.Default
+    private BookLoanStatus status = BookLoanStatus.CHECKED_OUT;
 
     @Column(nullable = false)
     private LocalDate checkoutDate;
 
     @Column(nullable = false)
+    private LocalDate dueDate;
+
     private LocalDate returnDate;
 
     @Builder.Default
     @Column(nullable = false)
     private Integer renewalCount = 0;
 
-    @Builder.Default
     @Column(nullable = false)
-    private Integer maxRenewals = 2;
+    private Integer maxRenewals;
 
     @Column(length = 150)
     private String notes;
 
-    //private BigDecimal fine;
+    @Builder.Default
+    private BigDecimal fine = BigDecimal.ZERO;
 
     @Column(nullable = false)
     @Builder.Default

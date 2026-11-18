@@ -10,12 +10,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CheckoutRequest {
+    @NotNull(message = "EL id del usuario es obligatorio")
+    private Long userId;
 
     @NotNull(message = "EL id del libro es obligatorio")
     private Long bookId;
-
-    @Positive(message = "Los días deben ser mayor que 0.")
-    private Integer loanDays = 14;
 
     private String notes;
 }

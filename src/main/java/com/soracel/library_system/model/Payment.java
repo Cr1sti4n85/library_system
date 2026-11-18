@@ -47,7 +47,7 @@ public class Payment {
 
     private String stripeCheckoutSessionId;
 
-    private String stripeCustomerId;
+    private String customerId;
 
     private LocalDateTime paidAt;
 

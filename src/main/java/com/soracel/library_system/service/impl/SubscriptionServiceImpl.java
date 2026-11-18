@@ -60,9 +60,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     @Override
     public SubscriptionDTO getUsersActiveSubscription(Long userId) {
-        UserDTO userDTO = userService.getCurrentUser();
         Subscription subscription = subscriptionRepository
-                .findActiveSubscriptionByUserId(userDTO.getId(), LocalDate.now())
+                .findActiveSubscriptionByUserId(userId, LocalDate.now())
                 .orElseThrow(() -> new NotFoundException("El usuario actual no tiene subscripciones activas"));
         return SubscriptionMapper.toDTO(subscription);
     }
@@ -130,7 +129,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
             if (paymentResult.getPaymentStatus().equals(PaymentStatus.SUCCEEDED)){
 
-                User user = userService.findByStripeCustomerId(paymentResult.getCustomerId());
+                User user = userService.findByCustomerId(paymentResult.getCustomerId());
                 Subscription activeSub = subscriptionRepository.findByCustomerIdAndStatus(paymentResult.getCustomerId(),
                         SubscriptionStatus.ACTIVE).orElseThrow(() ->
                         new NotFoundException("El usuario actual no tiene subscripciones activas"));
@@ -147,7 +146,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
             }
             if (paymentResult.getPaymentStatus().equals(PaymentStatus.FAILED)){
-                User foundUser = userService.findByStripeCustomerId(paymentResult.getCustomerId());
+                User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
                 //DEACTIVATE SUBSCRIPTION
                 Subscription sub = subscriptionRepository
                         .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE)
