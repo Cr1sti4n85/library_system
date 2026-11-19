@@ -1,4 +1,4 @@
-package com.soracel.library_system.service.impl;
+package com.soracel.library_system.payments;
 
 import com.soracel.library_system.domain.PaymentProvider;
 import com.soracel.library_system.domain.PaymentStatus;
@@ -31,7 +31,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .user(user)
                 .subscription(subscription)
                 .paymentProvider(provider)
-                .stripeCustomerId(customerId)
+                .customerId(customerId)
                 .paymentType(paymentType)
                 .status(status)
                 .amount(subscription.getPrice())

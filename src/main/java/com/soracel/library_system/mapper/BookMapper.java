@@ -28,7 +28,7 @@ public class BookMapper {
                 .totalCopies(book.getTotalCopies())
                 .availableCopies(book.getAvailableCopies())
                 .price(book.getPrice())
-                .coverimageUrl(book.getCoverImageUrl())
+                .coverImageUrl(book.getCoverImageUrl())
                 .active(book.getActive())
                 .createdAt(book.getCreatedAt())
                 .updatedAt(book.getUpdatedAt())
@@ -54,7 +54,7 @@ public class BookMapper {
                 .totalCopies(bookDTO.getTotalCopies())
                 .availableCopies(bookDTO.getAvailableCopies())
                 .price(bookDTO.getPrice())
-                .coverImageUrl(bookDTO.getCoverimageUrl());
+                .coverImageUrl(bookDTO.getCoverImageUrl());
 
         if (bookDTO.getActive() != null) {
             builder.active(bookDTO.getActive());
@@ -77,7 +77,7 @@ public class BookMapper {
         existingBook.setTotalCopies(bookDTO.getTotalCopies());
         existingBook.setAvailableCopies(bookDTO.getAvailableCopies());
         existingBook.setPrice(bookDTO.getPrice());
-        existingBook.setCoverImageUrl(bookDTO.getCoverimageUrl());
+        existingBook.setCoverImageUrl(bookDTO.getCoverImageUrl());
 
         if (bookDTO.getActive() != null){
             bookDTO.setActive(bookDTO.getActive());
