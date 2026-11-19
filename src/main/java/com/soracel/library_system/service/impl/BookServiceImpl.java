@@ -1,5 +1,6 @@
 package com.soracel.library_system.service.impl;
 
+import com.soracel.library_system.common.pagination.PaginationUtil;
 import com.soracel.library_system.exception.BookException;
 import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.mapper.BookMapper;
@@ -116,7 +117,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public PageResponse<BookDTO> searchBooksWithFilters(BookSearchRequest searchRequest) {
-        Pageable pageable = createPageable(
+        Pageable pageable = PaginationUtil.createPageable(
                 searchRequest.getPage(),
                 searchRequest.getPageSize(),
                 searchRequest.getSortBy(),
@@ -129,7 +130,7 @@ public class BookServiceImpl implements BookService {
                 pageable
         );
 
-        return convertToPageResponse(bookPage);
+        return PaginationUtil.convertToPageResponse(bookPage, BookMapper::toDTO);
     }
 
     @Override
@@ -144,31 +145,4 @@ public class BookServiceImpl implements BookService {
         return bookRepository.countByAvailableBooks();
     }
 
-    private Pageable createPageable(int page, int size, String sortBy, String sortDirection) {
-        size = Math.min(size, 20);
-        size = Math.max(size, 1);
-
-        Sort sort = sortDirection.equalsIgnoreCase("ASC")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
-        return  PageRequest.of(page, size, sort);
-    }
-
-    private PageResponse<BookDTO> convertToPageResponse(Page<Book> bookPage) {
-        List<BookDTO> bookDTOs = bookPage.getContent()
-                .stream()
-                .map(BookMapper::toDTO)
-                .toList();
-
-        return new PageResponse<>(
-                bookDTOs,
-                bookPage.getNumber(),
-                bookPage.getSize(),
-                bookPage.getTotalElements(),
-                bookPage.getTotalPages(),
-                bookPage.isLast(),
-                bookPage.isFirst(),
-                bookPage.isEmpty());
-    }
 }
