@@ -1,5 +1,6 @@
 package com.soracel.library_system.service.impl;
 
+import com.soracel.library_system.common.pagination.PaginationUtil;
 import com.soracel.library_system.domain.BookLoanStatus;
 import com.soracel.library_system.exception.BookException;
 import com.soracel.library_system.exception.LoanException;
@@ -10,7 +11,6 @@ import com.soracel.library_system.model.Book;
 import com.soracel.library_system.model.BookLoan;
 import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.model.User;
-import com.soracel.library_system.payload.dto.BookDTO;
 import com.soracel.library_system.payload.dto.BookLoanDTO;
 import com.soracel.library_system.payload.dto.UserDTO;
 import com.soracel.library_system.payload.request.BookLoanSearchRequest;
@@ -25,6 +25,9 @@ import com.soracel.library_system.service.BookLoanService;
 import com.soracel.library_system.service.SubscriptionService;
 import com.soracel.library_system.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -179,13 +182,49 @@ public class BookLoanServiceImpl implements BookLoanService {
     }
 
     @Override
-    public PageResponse<BookDTO> getUserBookLoans(BookLoanStatus status, int page, int size) {
-        return null;
+    public PageResponse<BookLoanDTO> getUserBookLoans(BookLoanStatus status, int page, int size) {
+        User currentUser = userService.getCurrentUserEntity();
+        Page<BookLoan> bookLoanPage;
+
+        if (status != null){
+            Pageable pageable = PaginationUtil.createPageable(page, size, "dueDate", "ASC");
+            bookLoanPage = bookLoanRepository.findByUserAndStatus(currentUser, status, pageable);
+        } else {
+            Pageable pageable = PaginationUtil.createPageable(page, size, "createdAt", "DESC");
+            bookLoanPage =  bookLoanRepository.findByUserId(currentUser.getId(), pageable);
+        }
+        return PaginationUtil.convertToPageResponse(bookLoanPage, BookLoanMapper::toDTO);
     }
 
     @Override
-    public PageResponse<BookDTO> getBookLoans(BookLoanSearchRequest request) {
-        return null;
+    public PageResponse<BookLoanDTO> getBookLoans(BookLoanSearchRequest request) {
+        Pageable pageable = PaginationUtil.createPageable(
+                request.getPage(),
+                request.getPageSize(),
+                request.getSortBy(),
+                request.getSortDirection()
+        );
+        Page<BookLoan> bookLoanPage;
+
+        if(request.getOverdueOnly()){
+            bookLoanPage = bookLoanRepository.findOverdueBookLoans(LocalDate.now(), pageable);
+        } else if (request.getUserId() != null) {
+            bookLoanPage = bookLoanRepository.findByUserId(request.getUserId(), pageable);
+        } else if (request.getBookId() != null) {
+            bookLoanPage = bookLoanRepository.findByBookId(request.getBookId(), pageable);
+        } else if (request.getStatus() != null) {
+            bookLoanPage = bookLoanRepository.findByStatus(request.getStatus(), pageable);
+        } else if (request.getStartDate() != null && request.getEndDate() != null) {
+            bookLoanPage = bookLoanRepository.findBookByDateRange(
+                    request.getStartDate(),
+                    request.getEndDate(),
+                    pageable
+            );
+        } else {
+            bookLoanPage = bookLoanRepository.findAll(pageable);
+        }
+
+        return PaginationUtil.convertToPageResponse(bookLoanPage, BookLoanMapper::toDTO);
     }
 
     @Override
