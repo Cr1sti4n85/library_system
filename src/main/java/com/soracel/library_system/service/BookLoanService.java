@@ -19,12 +19,12 @@ public interface BookLoanService {
 
     BookLoanDTO renewCheckout(RenewalRequest request);
 
-    PageResponse<BookDTO> getUserBookLoans(
+    PageResponse<BookLoanDTO> getUserBookLoans(
             BookLoanStatus status,
             int page,
             int size
     );
-    PageResponse<BookDTO> getBookLoans(BookLoanSearchRequest request);
+    PageResponse<BookLoanDTO> getBookLoans(BookLoanSearchRequest request);
 
     Integer updateOverdueBookLoan();
 

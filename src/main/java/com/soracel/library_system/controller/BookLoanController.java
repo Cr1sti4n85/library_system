@@ -22,6 +22,6 @@ public class BookLoanController {
     public ResponseEntity<BookLoanDTO> checkoutBook(@Valid @RequestBody CheckoutRequest request) {
 //        BookLoanDTO bookLoanDTO = bookLoanService.checkoutBookForUser(request);
 //        return ResponseEntity.status(HttpStatus.CREATED).body(bookLoanDTO);
-
+          return null;
     }
 }
