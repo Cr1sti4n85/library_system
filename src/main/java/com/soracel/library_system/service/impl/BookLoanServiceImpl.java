@@ -31,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -229,6 +230,24 @@ public class BookLoanServiceImpl implements BookLoanService {
 
     @Override
     public Integer updateOverdueBookLoan() {
-        return 0;
+        Pageable pageable = PageRequest.of(0, 1000);
+        Page<BookLoan> overdueBookLoanPage = bookLoanRepository.findOverdueBookLoans(LocalDate.now(), pageable);
+        int updateCount = 0;
+
+        for (BookLoan bookLoan : overdueBookLoanPage.getContent()) {
+            if (bookLoan.getStatus().equals(BookLoanStatus.CHECKED_OUT)) {
+                bookLoan.setStatus(BookLoanStatus.OVERDUE);
+                bookLoan.setIsOverdue(true);
+            }
+//            Calculate overdue days
+            int overdueDays= bookLoan.calculateOverdueDays(bookLoan.getDueDate(), LocalDate.now());
+            bookLoan.setOverdueDays(overdueDays);
+
+//            TODO Calculate fine
+            bookLoanRepository.save(bookLoan);
+            updateCount++;
+        }
+        return updateCount;
     }
+
 }

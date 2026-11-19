@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Getter
@@ -86,5 +87,9 @@ public class BookLoan {
         return this.status == BookLoanStatus.CHECKED_OUT
                 && !this.isOverdue
                 && this.renewalCount <= this.maxRenewals;
+    }
+
+    public int calculateOverdueDays(LocalDate dueDate, LocalDate today) {
+        return (int) ChronoUnit.DAYS.between(dueDate, today);
     }
 }
