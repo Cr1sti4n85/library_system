@@ -13,7 +13,7 @@ public interface BookLoanService {
 
     BookLoanDTO checkoutBook(CheckoutRequest request);
 
-    BookLoanDTO checkoutBookForUser(CheckoutRequest request);
+    BookLoanDTO checkoutBookForUser(Long userId, CheckoutRequest request);
 
     BookLoanDTO checkinBook(CheckinRequest request);
 

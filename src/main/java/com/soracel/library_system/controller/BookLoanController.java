@@ -20,8 +20,8 @@ public class BookLoanController {
 
     @PostMapping
     public ResponseEntity<BookLoanDTO> checkoutBook(@Valid @RequestBody CheckoutRequest request) {
-        BookLoanDTO bookLoanDTO = bookLoanService.checkoutBookForUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(bookLoanDTO);
+//        BookLoanDTO bookLoanDTO = bookLoanService.checkoutBookForUser(request);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(bookLoanDTO);
 
     }
 }

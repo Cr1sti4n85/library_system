@@ -12,6 +12,7 @@ import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.BookDTO;
 import com.soracel.library_system.payload.dto.BookLoanDTO;
+import com.soracel.library_system.payload.dto.UserDTO;
 import com.soracel.library_system.payload.request.BookLoanSearchRequest;
 import com.soracel.library_system.payload.request.CheckinRequest;
 import com.soracel.library_system.payload.request.CheckoutRequest;
@@ -40,12 +41,15 @@ public class BookLoanServiceImpl implements BookLoanService {
 
     @Override
     public BookLoanDTO checkoutBook(CheckoutRequest request) {
-        return null;
+
+        UserDTO user = userService.getCurrentUser();
+
+        return checkoutBookForUser(user.getId(), request);
     }
 
     @Override
-    public BookLoanDTO checkoutBookForUser(CheckoutRequest request) {
-        User user = userService.getUserById(request.getUserId());
+    public BookLoanDTO checkoutBookForUser(Long userId, CheckoutRequest request) {
+        User user = userService.getUserById(userId);
 
         //VALIDATE ACTIVE SUBSCRIPTION
 //        SubscriptionDTO subscription = subscriptionService.getUsersActiveSubscription(user.getId());
@@ -103,8 +107,6 @@ public class BookLoanServiceImpl implements BookLoanService {
                 .notes(request.getNotes())
                 .build();
 
-        System.out.println("Prestamo: " + bookLoan);
-
         //SAVE BOOK LOAN
         BookLoan savedLoan = bookLoanRepository.save(bookLoan);
 
@@ -113,12 +115,67 @@ public class BookLoanServiceImpl implements BookLoanService {
 
     @Override
     public BookLoanDTO checkinBook(CheckinRequest request) {
-        return null;
+        //VALIDATE BOOK LOAN EXISTS
+        BookLoan loan = bookLoanRepository.findById(request.getBookLoanId())
+                .orElseThrow(() -> new LoanException("No existe préstamo asociado a ese libro"));
+
+        //check if book alreay returned
+        if (!loan.isActive()) {
+            throw new LoanException("No existe préstamo asociado a este libro");
+        }
+
+        //set returned properties
+        loan.setReturnDate(LocalDate.now());
+        BookLoanStatus status =  request.getStatus();
+
+        if (status == null) status = BookLoanStatus.RETURNED;
+
+        loan.setStatus(status);
+        loan.setNotes(request.getNotes());
+        loan.setIsOverdue(false);
+        loan.setOverdueDays(0);
+
+        //TODO apply fine
+
+        //update book availability
+        if (status != BookLoanStatus.LOST){
+            Book book = loan.getBook();
+            book.setAvailableCopies(book.getAvailableCopies() + 1);
+            bookRepository.save(book);
+            //TODO process next checkin
+        }
+
+        BookLoan savedLoan = bookLoanRepository.save(loan);
+        return BookLoanMapper.toDTO(savedLoan);
     }
 
     @Override
     public BookLoanDTO renewCheckout(RenewalRequest request) {
-        return null;
+        //VALIDATE BOOK LOAN EXISTS
+        BookLoan loan = bookLoanRepository.findById(request.getBookLoanId())
+                .orElseThrow(() -> new LoanException("No existe préstamo asociado a ese libro"));
+
+        //CHECK IF BOOK CAN BE RENEWED - LOAN renewalCount, maxRenewals (basic 1; premium 2)
+        if (!loan.canRenew()){
+            throw new LoanException("El préstamo del libro no puede renovarse." +
+                    "Revisa si tienes multa o si agotaste tus renovaciones");
+        }
+        //update dueDate
+        Subscription subscription = loan.getUser().getSubscriptions()
+                                    .stream()
+                                    .filter(sub -> sub.getIsActive() == true)
+                                    .findFirst()
+                                    .orElseThrow(() -> new SubscriptionException("No tiene suscripciones activas."));
+
+        loan.setDueDate(loan.getDueDate().plusDays(subscription.getMaxDaysPerBook()));
+
+        //increment renewal count
+        loan.setRenewalCount(loan.getRenewalCount() + 1);
+        loan.setNotes(request.getNotes());
+
+        BookLoan renewal = bookLoanRepository.save(loan);
+
+        return BookLoanMapper.toDTO(renewal);
     }
 
     @Override

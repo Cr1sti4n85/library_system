@@ -14,7 +14,7 @@ public class RenewalRequest {
     private Long bookLoanId;
 
     @Min(value = 1, message = "La extensión debe ser al menos de 1 día")
-    private Integer extensionDays = 14;
+    private Integer extensionDays;
 
     private String notes;
 }

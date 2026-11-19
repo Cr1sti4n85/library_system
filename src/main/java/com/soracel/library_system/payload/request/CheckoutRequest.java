@@ -10,8 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CheckoutRequest {
-    @NotNull(message = "EL id del usuario es obligatorio")
-    private Long userId;
 
     @NotNull(message = "EL id del libro es obligatorio")
     private Long bookId;

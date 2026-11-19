@@ -78,4 +78,13 @@ public class BookLoan {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    public boolean isActive() {
+        return  this.status == BookLoanStatus.CHECKED_OUT || this.status == BookLoanStatus.OVERDUE;
+    }
+
+    public boolean canRenew() {
+        return this.status == BookLoanStatus.CHECKED_OUT
+                && !this.isOverdue
+                && this.renewalCount <= this.maxRenewals;
+    }
 }
