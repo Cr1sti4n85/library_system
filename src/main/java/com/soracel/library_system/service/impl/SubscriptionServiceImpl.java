@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +41,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
         User currentUser = userService.getCurrentUserEntity();
         SubscriptionPlan plan = subscriptionPlanService.getSubscriptionPlanById(subscriptionDTO.getPlanId());
+
+        Optional<Subscription> existingSub = subscriptionRepository.findByUserIdAndPlanIdAndStatus(
+                currentUser.getId(),
+                plan.getId(),
+                SubscriptionStatus.PENDING);
+
+        existingSub.ifPresent(subscriptionRepository::delete);
 
         Subscription subscription = SubscriptionMapper
                 .toEntity(subscriptionDTO, currentUser, plan);
