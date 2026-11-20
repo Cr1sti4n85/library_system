@@ -13,7 +13,7 @@ public class CheckinRequest {
     @NotNull(message = "El campo id es obligatorio")
     private  Long bookLoanId;
 
-    private BookLoanStatus status = BookLoanStatus.RETURNED;
+    private BookLoanStatus status;
 
     private String notes;
 }

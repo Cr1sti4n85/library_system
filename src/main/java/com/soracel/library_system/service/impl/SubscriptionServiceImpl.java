@@ -7,16 +7,12 @@ import com.soracel.library_system.domain.SubscriptionStatus;
 import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.exception.SubscriptionException;
 import com.soracel.library_system.mapper.SubscriptionMapper;
-import com.soracel.library_system.model.Payment;
 import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.model.SubscriptionPlan;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.SubscriptionDTO;
-import com.soracel.library_system.payload.dto.UserDTO;
 import com.soracel.library_system.payments.*;
-import com.soracel.library_system.repository.PaymentRepository;
 import com.soracel.library_system.repository.SubscriptionRepository;
-import com.soracel.library_system.repository.UserRepository;
 import com.soracel.library_system.service.SubscriptionPlanService;
 import com.soracel.library_system.service.SubscriptionService;
 import com.soracel.library_system.service.UserService;
@@ -35,8 +31,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanService  subscriptionPlanService;
     private final UserService userService;
-    private final UserRepository userRepository;
-    private final PaymentRepository paymentRepository;
     private final PaymentService paymentService;
     private final PaymentGateway paymentGateway;
 
@@ -88,7 +82,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public void activateSubscription(PaymentResult paymentResult) {
 
         Subscription sub = subscriptionRepository
-                .findByIdAndStatus(paymentResult.getMetadata().get("userId"), SubscriptionStatus.PENDING)
+                .findByIdAndStatus(paymentResult.getMetadata().get("subscriptionId"), SubscriptionStatus.PENDING)
                 .orElseThrow(() -> new NotFoundException("No se encuentra la suscripción"));
         sub.setCustomerId(paymentResult.getCustomerId());
         sub.setIsActive(true);
@@ -134,6 +128,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                         SubscriptionStatus.ACTIVE).orElseThrow(() ->
                         new NotFoundException("El usuario actual no tiene subscripciones activas"));
 
+                //TODO save invoice id in payment. will be used as idempotency key
+
                 paymentService.createSubscriptionPayment(
                         user,
                         activeSub,
@@ -155,6 +151,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 sub.setIsActive(false);
                 Subscription updatedSub = subscriptionRepository.save(sub);
 
+                //TODO save invoice id in payment. will be used as idempotency key
                 //CREATE FAILED SUBSCRIPTION PAYMENT
                 paymentService.createSubscriptionPayment(
                         foundUser,

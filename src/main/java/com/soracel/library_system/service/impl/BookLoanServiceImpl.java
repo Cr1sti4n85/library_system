@@ -2,6 +2,7 @@ package com.soracel.library_system.service.impl;
 
 import com.soracel.library_system.common.pagination.PaginationUtil;
 import com.soracel.library_system.domain.BookLoanStatus;
+import com.soracel.library_system.domain.BookLoanType;
 import com.soracel.library_system.exception.BookException;
 import com.soracel.library_system.exception.LoanException;
 import com.soracel.library_system.exception.NotFoundException;
@@ -22,7 +23,6 @@ import com.soracel.library_system.repository.BookLoanRepository;
 import com.soracel.library_system.repository.BookRepository;
 import com.soracel.library_system.repository.projection.BookLoanStatusCount;
 import com.soracel.library_system.service.BookLoanService;
-import com.soracel.library_system.service.SubscriptionService;
 import com.soracel.library_system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -31,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -40,7 +41,6 @@ public class BookLoanServiceImpl implements BookLoanService {
     private final BookLoanRepository bookLoanRepository;
     private final BookRepository  bookRepository;
     private final UserService userService;
-    private final SubscriptionService subscriptionService;
 
     @Override
     public BookLoanDTO checkoutBook(CheckoutRequest request) {
@@ -134,11 +134,12 @@ public class BookLoanServiceImpl implements BookLoanService {
         if (status == null) status = BookLoanStatus.RETURNED;
 
         loan.setStatus(status);
+        loan.setLoanType(BookLoanType.RETURN);
         loan.setNotes(request.getNotes());
         loan.setIsOverdue(false);
         loan.setOverdueDays(0);
 
-        //TODO apply fine
+        //TODO apply fine if the status is OVERDUE
 
         //update book availability
         if (status != BookLoanStatus.LOST){
@@ -172,6 +173,8 @@ public class BookLoanServiceImpl implements BookLoanService {
 
         loan.setDueDate(loan.getDueDate().plusDays(subscription.getMaxDaysPerBook()));
 
+        loan.setLoanType(BookLoanType.RENEWAL);
+
         //increment renewal count
         loan.setRenewalCount(loan.getRenewalCount() + 1);
         loan.setNotes(request.getNotes());
@@ -198,15 +201,16 @@ public class BookLoanServiceImpl implements BookLoanService {
 
     @Override
     public PageResponse<BookLoanDTO> getBookLoans(BookLoanSearchRequest request) {
+
         Pageable pageable = PaginationUtil.createPageable(
-                request.getPage(),
-                request.getPageSize(),
-                request.getSortBy(),
-                request.getSortDirection()
+                request.getPage() != null ? request.getPage() : 0,
+                request.getPageSize() != null ? request.getPageSize() : 20,
+                request.getSortBy()  != null ? request.getSortBy() : "createdAt",
+                request.getSortDirection()  != null ? request.getSortDirection() : "DESC"
         );
         Page<BookLoan> bookLoanPage;
 
-        if(request.getOverdueOnly()){
+        if(request.getOverdueOnly() != null && request.getOverdueOnly()){
             bookLoanPage = bookLoanRepository.findOverdueBookLoans(LocalDate.now(), pageable);
         } else if (request.getUserId() != null) {
             bookLoanPage = bookLoanRepository.findByUserId(request.getUserId(), pageable);
@@ -229,6 +233,24 @@ public class BookLoanServiceImpl implements BookLoanService {
 
     @Override
     public Integer updateOverdueBookLoan() {
-        return 0;
+        Pageable pageable = PageRequest.of(0, 1000);
+        Page<BookLoan> overdueBookLoanPage = bookLoanRepository.findOverdueBookLoans(LocalDate.now(), pageable);
+        int updateCount = 0;
+
+        for (BookLoan bookLoan : overdueBookLoanPage.getContent()) {
+            if (bookLoan.getStatus().equals(BookLoanStatus.CHECKED_OUT)) {
+                bookLoan.setStatus(BookLoanStatus.OVERDUE);
+                bookLoan.setIsOverdue(true);
+            }
+//            Calculate overdue days
+            int overdueDays= bookLoan.calculateOverdueDays(bookLoan.getDueDate(), LocalDate.now());
+            bookLoan.setOverdueDays(overdueDays);
+
+//            TODO Calculate fine
+            bookLoanRepository.save(bookLoan);
+            updateCount++;
+        }
+        return updateCount;
     }
+
 }

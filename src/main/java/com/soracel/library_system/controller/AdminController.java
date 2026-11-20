@@ -1,7 +1,11 @@
 package com.soracel.library_system.controller;
 
 import com.soracel.library_system.payload.dto.*;
+import com.soracel.library_system.payload.request.BookLoanSearchRequest;
+import com.soracel.library_system.payload.request.CheckinRequest;
+import com.soracel.library_system.payload.request.CheckoutRequest;
 import com.soracel.library_system.payload.response.ApiResponse;
+import com.soracel.library_system.payload.response.PageResponse;
 import com.soracel.library_system.payments.PaymentService;
 import com.soracel.library_system.service.*;
 import jakarta.validation.Valid;
@@ -15,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,7 +32,7 @@ public class AdminController {
     private final SubscriptionPlanService subscriptionPlanService;
     private final SubscriptionService subscriptionService;
     private final PaymentService paymentService;
-
+    private final BookLoanService bookLoanService;
 
     //USERS
     @GetMapping("/users")
@@ -137,6 +142,7 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(resp);
     }
 
+    //PAYMENTS
     @GetMapping("/payments")
     public ResponseEntity<Page<PaymentDTO>> getAllPayments(
             @RequestParam(defaultValue = "0") int page,
@@ -152,6 +158,35 @@ public class AdminController {
         Page<PaymentDTO> payments = paymentService.getAllPayments(pageable);
         return ResponseEntity.ok(payments);
 
+    }
+
+    //LOANS
+    @GetMapping("/loans")
+    public ResponseEntity<PageResponse<BookLoanDTO>>  getLoans(@Valid @RequestBody BookLoanSearchRequest request) {
+
+        PageResponse<BookLoanDTO> bookLoans = bookLoanService.getBookLoans(request);
+        return ResponseEntity.status(HttpStatus.OK).body(bookLoans);
+    }
+
+    @PostMapping("/loans/users/{userId}/checkouts")
+    public ResponseEntity<BookLoanDTO>  checkoutBookForUser(@PathVariable Long userId,
+                                                            @Valid @RequestBody CheckoutRequest request) {
+        BookLoanDTO bookLoanDTO = bookLoanService.checkoutBookForUser(userId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookLoanDTO);
+    }
+
+    @PutMapping("/loans/checkins")
+    public ResponseEntity<BookLoanDTO>  checkinBook(@Valid @RequestBody CheckinRequest request) {
+        BookLoanDTO bookLoanDTO = bookLoanService.checkinBook(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookLoanDTO);
+    }
+
+    @PutMapping("/loans/overdue-loans")
+    public ResponseEntity<Map<String, Integer>> updateOverdueBookLoans(){
+        int updateCount = bookLoanService.updateOverdueBookLoan();
+        return ResponseEntity.status(HttpStatus.OK).body(Map.of(
+                "updateCount", updateCount
+        ));
     }
 
 }
