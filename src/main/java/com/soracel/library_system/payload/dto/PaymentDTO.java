@@ -4,6 +4,7 @@ import com.soracel.library_system.domain.PaymentProvider;
 import com.soracel.library_system.domain.PaymentStatus;
 import com.soracel.library_system.domain.PaymentType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ public class PaymentDTO {
 
     private String fullName;
 
+    @Email(message = "El correo no tiene formato correcto")
     private String email;
 
     private Long subscriptionId;

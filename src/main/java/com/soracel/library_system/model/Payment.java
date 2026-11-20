@@ -28,8 +28,12 @@ public class Payment {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subscription_id", nullable = false)
+    @JoinColumn(name = "subscription_id")
     private Subscription subscription;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "fine_id")
+    private Fine fine;
 
     @Enumerated(EnumType.STRING)
     private PaymentProvider paymentProvider;

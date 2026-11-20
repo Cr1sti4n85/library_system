@@ -21,6 +21,7 @@ public class BookLoanDTO {
     private Long id;
     private Long userId;
     private String userName;
+    @Email(message = "El correo no tiene formato correcto")
     private String userEmail;
     private Long bookId;
     private String bookTitle;

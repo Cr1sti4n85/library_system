@@ -31,7 +31,6 @@ public class BookLoanMapper {
                 .notes(bookLoan.getNotes())
                 .isOverdue(bookLoan.getIsOverdue())
                 .overdueDays(bookLoan.getOverdueDays())
-                .fineAmount(bookLoan.getFine())
                 .createdAt(bookLoan.getCreatedAt())
                 .updatedAt(bookLoan.getUpdatedAt())
                 .build();
