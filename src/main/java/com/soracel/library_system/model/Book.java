@@ -1,7 +1,6 @@
 package com.soracel.library_system.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.AssertTrue;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;

@@ -8,7 +8,9 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -53,8 +55,11 @@ public class User {
 
     private LocalDateTime lastLogin;
 
-    @OneToMany(mappedBy = "user",  cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
     private Set<Subscription> subscriptions = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
+    private List<BookLoan> bookLoans = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;

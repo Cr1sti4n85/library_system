@@ -65,10 +65,6 @@ public class BookDTO {
 
     private Boolean active;
 
-    private Boolean alreadyBorrowed;
-
-    private Boolean alreadyReserved;
-
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

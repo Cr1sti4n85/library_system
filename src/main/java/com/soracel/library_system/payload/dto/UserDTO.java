@@ -1,6 +1,7 @@
 package com.soracel.library_system.payload.dto;
 
 import com.soracel.library_system.domain.UserRole;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 public class UserDTO {
     private Long id;
     @NotNull(message = "El email es obligatorio")
+    @Email(message = "El correo no tiene formato correcto")
     private String email;
     @NotNull(message = "La contraseña es obligatoria")
     private String password;

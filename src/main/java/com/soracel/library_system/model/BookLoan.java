@@ -11,6 +11,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -31,6 +33,9 @@ public class BookLoan {
     @JoinColumn(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private Book book;
+
+    @OneToMany(mappedBy = "bookLoan", cascade = CascadeType.PERSIST)
+    private List<Fine> fines =  new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -60,8 +65,8 @@ public class BookLoan {
     @Column(length = 150)
     private String notes;
 
-    @Builder.Default
-    private BigDecimal fine = BigDecimal.ZERO;
+//    @Builder.Default
+//    private BigDecimal fine = BigDecimal.ZERO;
 
     @Column(nullable = false)
     @Builder.Default

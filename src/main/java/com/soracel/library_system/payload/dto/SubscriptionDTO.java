@@ -1,5 +1,6 @@
 package com.soracel.library_system.payload.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,8 @@ public class SubscriptionDTO {
     private Long userId;
 
     private String userName;
+
+    @Email(message = "El correo no tiene formato correcto")
     private String email;
 
     @NotNull(message = "La id del plan es obligatoria")
