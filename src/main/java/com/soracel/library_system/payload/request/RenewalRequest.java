@@ -13,9 +13,6 @@ public class RenewalRequest {
     @NotNull(message = "El id del préstamo es obligatorio")
     private Long bookLoanId;
 
-    @Min(value = 1, message = "La extensión debe ser al menos de 1 día")
-    private Integer extensionDays;
-
     private String notes;
 }
 

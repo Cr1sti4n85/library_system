@@ -18,8 +18,8 @@ public class BookLoanSearchRequest {
     private Boolean unpaidFinesOnly;
     private LocalDate startDate;
     private LocalDate endDate;
-    private Integer page = 0;
-    private Integer pageSize = 20;
-    private String sortBy = "createdAt";
-    private String  sortDirection = "DESC";
+    private Integer page;
+    private Integer pageSize;
+    private String sortBy;
+    private String  sortDirection;
 }
