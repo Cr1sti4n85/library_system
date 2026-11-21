@@ -42,7 +42,7 @@ public class JwtUtil {
         String roles = populateAuthorities(authorities);
         return Jwts.builder()
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 20000))
+                .expiration(new Date(System.currentTimeMillis() + 86_400_000))
                 .claim("authorities", roles)
                 .claim("email", authentication.getName())
                 .signWith(key)
