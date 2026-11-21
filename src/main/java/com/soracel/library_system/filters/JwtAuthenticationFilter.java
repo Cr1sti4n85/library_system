@@ -33,35 +33,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        String token = getTokenFromRequest(request);
-        if (token != null) {
-            try {
-                Claims claims = Jwts.parser().verifyWith(jwtUtil.getKey()).build().parseSignedClaims(token).getPayload();
-
-                String email = claims.get("email", String.class);
-                String authorities = claims.get("authorities", String.class);
-                List<GrantedAuthority> authoritiesList = AuthorityUtils
-                                                        .commaSeparatedStringToAuthorityList(authorities);
-                Authentication auth =  new UsernamePasswordAuthenticationToken(
-                        email,
-                        null,
-                        authoritiesList);
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            } catch (ExpiredJwtException e) {
-                throw new BadCredentialsException("El token ha expirado", e);
-            } catch (JwtException | IllegalArgumentException e) {
-                throw new BadCredentialsException("Token inválido", e);
-            }
-
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")){
+            filterChain.doFilter(request, response);
+            return;
         }
+        String token = authHeader.replace("Bearer ", "");
+        Claims claims = jwtUtil.parseToken(token);
+        if (claims  == null || jwtUtil.isExpired(claims)){
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String email = claims.get("email", String.class);
+        String authorities = claims.get("authorities", String.class);
+        List<GrantedAuthority> authoritiesList = AuthorityUtils
+                .commaSeparatedStringToAuthorityList(authorities);
+        Authentication auth =  new UsernamePasswordAuthenticationToken(email, null, authoritiesList);
+
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         filterChain.doFilter(request, response);
     }
 
-    private String getTokenFromRequest(HttpServletRequest request) {
-        String token = request.getHeader(jwtUtil.getJWT_HEADER());
-        if (token != null && token.startsWith("Bearer ")) {
-            return token.substring(7);
-        }
-        return null;
-    }
 }

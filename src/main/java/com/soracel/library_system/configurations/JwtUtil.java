@@ -1,6 +1,7 @@
 package com.soracel.library_system.configurations;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
@@ -41,7 +42,7 @@ public class JwtUtil {
         String roles = populateAuthorities(authorities);
         return Jwts.builder()
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 86_400_000))
+                .expiration(new Date(System.currentTimeMillis() + 20000))
                 .claim("authorities", roles)
                 .claim("email", authentication.getName())
                 .signWith(key)
@@ -53,6 +54,26 @@ public class JwtUtil {
         Claims claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
         return claims.get("email", String.class);
 
+    }
+
+    public Claims parseToken(String token){
+        try {
+            return getClaims(token);
+        } catch (JwtException e) {
+            return null;
+        }
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public boolean isExpired(Claims claims){
+        return claims.getExpiration().before(new Date());
     }
 
     private String populateAuthorities(Collection<? extends GrantedAuthority> authorities) {
