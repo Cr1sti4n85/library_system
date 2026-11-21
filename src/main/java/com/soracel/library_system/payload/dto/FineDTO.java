@@ -1,11 +1,13 @@
 package com.soracel.library_system.payload.dto;
 
+import com.soracel.library_system.domain.FineStatus;
 import com.soracel.library_system.domain.FineType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -36,5 +38,27 @@ public class FineDTO {
 
     @NotNull(message = "El valor de la multa os obligatorio")
     private BigDecimal amount;
+
+    @NotNull(message = "El status el obligatorio")
+    private FineStatus status;
+
+    private String reason;
+
+    private String notes;
+
+    private Long waivedByUserId;
+
+    private String waivedByUsername;
+
+    private LocalDateTime waivedAt;
+
+    private String waiverReason;
+
+    private LocalDateTime paidAt;
+
+    private String transactionId;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
 }
