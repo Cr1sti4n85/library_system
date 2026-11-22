@@ -1,5 +1,7 @@
 package com.soracel.library_system.service;
 
+import com.soracel.library_system.domain.SubscriptionStatus;
+import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.payload.dto.SubscriptionDTO;
 import com.soracel.library_system.payments.CheckoutSession;
 import com.soracel.library_system.payments.PaymentResult;
@@ -22,5 +24,6 @@ public interface SubscriptionService {
 
     void deactivateExpiredSubscriptions();
 
-    void handleWebhookEvent(WebhookRequest request);
+    Subscription findByCustomerIdAndStatus(String customerId, SubscriptionStatus status);
+
 }
