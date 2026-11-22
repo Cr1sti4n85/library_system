@@ -51,7 +51,7 @@ public class BookLoanDTO {
     private Boolean isFinePaid;
     private Boolean isOverdue;
     @Positive(message = "EL valor de días debe ser número positivo")
-    private Integer overdueDays;
+    private Long overdueDays;
     @Size(min = 5, max = 150, message = "Las notas deben contener entre y 150 caracteres")
     private String notes;
     private LocalDateTime createdAt;

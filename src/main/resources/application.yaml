@@ -34,3 +34,5 @@ stripe:
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
 
 websiteUrl:  https://unconsulting-renato-nonspecific.ngrok-free.dev
+
+overdueBaseAmount: 3
