@@ -61,7 +61,7 @@ public class Fine {
 
     private LocalDateTime paidAt;
 
-    private String transactionId;
+    private String paymentIntentId;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

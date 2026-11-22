@@ -111,7 +111,8 @@ public class StripePaymentGateway implements PaymentGateway {
                     Optional.of(PaymentResult.builder()
                             .paymentStatus(PaymentStatus.COMPLETED)
                             .customerId(extractCustomerId(event))
-                            .metadata(extractMetadata(event))
+                            .metadata(extractSessionMetadata(event))
+                            .paymentIntentId(extractPaymentIntentIdFromSession(event))
                             .build());
 
                 case "invoice.paid" ->
@@ -120,11 +121,23 @@ public class StripePaymentGateway implements PaymentGateway {
                              .customerId(extractCustomerId(event))
                             .build());
 
+                case "payment_intent.succeeded" ->
+                        Optional.of(PaymentResult.builder()
+                                .paymentStatus(PaymentStatus.SUCCEEDED)
+                                .paymentIntentId(extractPaymentIntentId(event))
+                                .build());
+
                 case "invoice.payment_failed" ->
                     Optional.of(PaymentResult.builder()
                             .paymentStatus(PaymentStatus.FAILED)
                             .customerId(extractCustomerId(event))
                             .build());
+
+                case "payment_intent.payment_failed" ->
+                        Optional.of(PaymentResult.builder()
+                                .paymentStatus(PaymentStatus.FAILED)
+                                .paymentIntentId(extractPaymentIntentId(event))
+                                .build());
 
                 default ->
                     Optional.empty();
@@ -136,7 +149,7 @@ public class StripePaymentGateway implements PaymentGateway {
         }
     }
 
-    private Map<String, Long> extractMetadata(Event event){
+    private Map<String, Long> extractSessionMetadata(Event event){
             Session session = deserializeSession(event);
             if (session.getMetadata().get("fineId") != null){
                 Long fineId = Long.parseLong(session.getMetadata().get("fineId"));
@@ -162,6 +175,15 @@ public class StripePaymentGateway implements PaymentGateway {
             return invoice.getCustomer();
     }
 
+    private String extractPaymentIntentIdFromSession(Event event) {
+        Session session = deserializeSession(event);
+        return session.getPaymentIntent();
+    }
+
+    private String extractPaymentIntentId(Event event) {
+        PaymentIntent paymentIntent = deserializePaymentIntent(event);
+        return paymentIntent.getId();
+    }
 
     private Session deserializeSession(Event event) {
         StripeObject stripeObject = event.getDataObjectDeserializer().getObject()

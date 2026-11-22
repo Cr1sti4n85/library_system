@@ -3,6 +3,7 @@ package com.soracel.library_system.payments;
 import com.soracel.library_system.domain.PaymentProvider;
 import com.soracel.library_system.domain.PaymentStatus;
 import com.soracel.library_system.domain.PaymentType;
+import com.soracel.library_system.model.Fine;
 import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.PaymentDTO;
@@ -12,8 +13,9 @@ import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
 
 public interface PaymentService {
-    void createSubscriptionPayment(User user,
+    void createPayment(User user,
                           Subscription subscription,
+                          Fine fine,
                           PaymentType paymentType,
                           PaymentProvider provider,
                           String customerId,
