@@ -56,7 +56,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription newSub = subscriptionRepository.save(subscription);
 
 
-        return paymentGateway.createCheckoutSession(currentUser.getId(), newSub.getId(), plan.getStripePriceId());
+        return paymentGateway.createSubscriptionCheckoutSession(currentUser.getId(),
+                                                                newSub.getId(),
+                                                                plan.getStripePriceId());
 
     }
 

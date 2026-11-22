@@ -19,6 +19,6 @@ public interface PaymentService {
                           String customerId,
                           BigDecimal amount,
                           PaymentStatus status);
-
+    
     Page<PaymentDTO> getAllPayments(Pageable pageable);
 }

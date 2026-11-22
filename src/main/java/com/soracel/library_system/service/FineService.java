@@ -13,6 +13,8 @@ import java.util.List;
 
 public interface FineService {
 
+    CheckoutSession payFine(Long fineId);
+
     FineDTO waiveFine(WaiveFineRequest request);
 
     List<FineDTO> getUserFines(FineStatus fineStatus, FineType fineType);
