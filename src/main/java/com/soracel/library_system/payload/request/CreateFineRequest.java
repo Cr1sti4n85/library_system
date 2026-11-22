@@ -1,5 +1,6 @@
 package com.soracel.library_system.payload.request;
 
+import com.soracel.library_system.domain.FineStatus;
 import com.soracel.library_system.domain.FineType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -15,7 +16,7 @@ import java.math.BigDecimal;
 public class CreateFineRequest {
 
     @NotNull(message = "El id del préstamo es obligatorio.")
-    private Long id;
+    private Long bookLoanId;
 
     @NotNull(message = "El tipo de multa es obligatorio.")
     private FineType type;

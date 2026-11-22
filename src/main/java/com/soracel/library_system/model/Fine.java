@@ -35,11 +35,13 @@ public class Fine {
     @OneToMany(mappedBy = "fine", cascade = CascadeType.PERSIST)
     private List<Payment> payments = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
     private FineType fineType;
 
     @Column(nullable = false)
     private BigDecimal amount;
 
+    @Enumerated(EnumType.STRING)
     private FineStatus status;
 
     @Column(length = 100)

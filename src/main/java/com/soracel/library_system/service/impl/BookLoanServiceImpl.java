@@ -3,15 +3,14 @@ package com.soracel.library_system.service.impl;
 import com.soracel.library_system.common.pagination.PaginationUtil;
 import com.soracel.library_system.domain.BookLoanStatus;
 import com.soracel.library_system.domain.BookLoanType;
+import com.soracel.library_system.domain.FineStatus;
+import com.soracel.library_system.domain.FineType;
 import com.soracel.library_system.exception.BookException;
 import com.soracel.library_system.exception.LoanException;
 import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.exception.SubscriptionException;
 import com.soracel.library_system.mapper.BookLoanMapper;
-import com.soracel.library_system.model.Book;
-import com.soracel.library_system.model.BookLoan;
-import com.soracel.library_system.model.Subscription;
-import com.soracel.library_system.model.User;
+import com.soracel.library_system.model.*;
 import com.soracel.library_system.payload.dto.BookLoanDTO;
 import com.soracel.library_system.payload.dto.UserDTO;
 import com.soracel.library_system.payload.request.BookLoanSearchRequest;
@@ -25,13 +24,14 @@ import com.soracel.library_system.repository.projection.BookLoanStatusCount;
 import com.soracel.library_system.service.BookLoanService;
 import com.soracel.library_system.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -41,6 +41,8 @@ public class BookLoanServiceImpl implements BookLoanService {
     private final BookLoanRepository bookLoanRepository;
     private final BookRepository  bookRepository;
     private final UserService userService;
+    @Value("${overdueBaseAmount}")
+    private long overdueBaseAmount;
 
     @Override
     public BookLoanDTO checkoutBook(CheckoutRequest request) {
@@ -127,28 +129,56 @@ public class BookLoanServiceImpl implements BookLoanService {
             throw new LoanException("No existe préstamo asociado a este libro");
         }
 
-        //set returned properties
-        loan.setReturnDate(LocalDate.now());
         BookLoanStatus status =  request.getStatus();
 
         if (status == null) status = BookLoanStatus.RETURNED;
 
         loan.setStatus(status);
-        loan.setLoanType(BookLoanType.RETURN);
         loan.setNotes(request.getNotes());
         loan.setIsOverdue(false);
-        loan.setOverdueDays(0);
+        loan.setOverdueDays(0L);
 
-        //TODO apply fine if the status is OVERDUE
+        Fine fine = null;
+        //if status equals LOST, check for book price and apply it to new fine
+        if (status.equals(BookLoanStatus.LOST)) {
+            BigDecimal bookPrice = loan.getBook().getPrice();
+            fine = Fine.builder()
+                    .bookLoan(loan)
+                    .user(loan.getUser())
+                    .fineType(FineType.LOSS)
+                    .amount(bookPrice)
+                    .status(FineStatus.PENDING)
+                    .fineReason("Multa por pérdida de libro")
+                    .notes(request.getNotes())
+                    .build();
 
-        //update book availability
+        } else if (status.equals(BookLoanStatus.DAMAGED)){
+            //if status equals DAMAGED, apply charges based on business rules
+            if (request.getFineAmount() == null){
+                throw new IllegalArgumentException("El valor de la multa es obligatorio.");
+            }
+            fine = Fine.builder()
+                    .bookLoan(loan)
+                    .user(loan.getUser())
+                    .fineType(FineType.DAMAGE)
+                    .amount(request.getFineAmount())
+                    .status(FineStatus.PENDING)
+                    .fineReason("Multa por daño de libro")
+                    .notes(request.getNotes())
+                    .build();
+        }
+        Book book = null;
         if (status != BookLoanStatus.LOST){
-            Book book = loan.getBook();
+            loan.setReturnDate(LocalDate.now());
+            loan.setLoanType(BookLoanType.RETURN);
+            book = loan.getBook();
             book.setAvailableCopies(book.getAvailableCopies() + 1);
             bookRepository.save(book);
-            //TODO process next checkin
+        } else {
+            book = loan.getBook();
+            book.setTotalCopies(book.getTotalCopies() - 1);
         }
-
+        loan.addFine(fine);
         BookLoan savedLoan = bookLoanRepository.save(loan);
         return BookLoanMapper.toDTO(savedLoan);
     }
@@ -241,12 +271,31 @@ public class BookLoanServiceImpl implements BookLoanService {
             if (bookLoan.getStatus().equals(BookLoanStatus.CHECKED_OUT)) {
                 bookLoan.setStatus(BookLoanStatus.OVERDUE);
                 bookLoan.setIsOverdue(true);
+                bookLoan.setOverdueDays(1L);
+                //create new fine
+                Fine fine = Fine.builder()
+                        .bookLoan(bookLoan)
+                        .user(bookLoan.getUser())
+                        .fineType(FineType.OVERDUE)
+                        .amount(BigDecimal.valueOf(overdueBaseAmount))
+                        .status(FineStatus.PENDING)
+                        .fineReason("Retraso en devolución")
+                        .notes("Multa por 1 día de retraso")
+                        .build();
+                bookLoan.addFine(fine);
+               //Book Loan is already OVERDUE. increase fine amount for every day that passes
+            } else {
+                List<Fine> fines = bookLoan.getFines();
+                for (Fine fine : fines) {
+                    if (fine.getFineType().equals(FineType.OVERDUE) && fine.getStatus().equals(FineStatus.PENDING)) {
+                        long overdueDays= bookLoan.calculateOverdueDays(bookLoan.getDueDate(), LocalDate.now());
+                        fine.setAmount(BigDecimal.valueOf(overdueBaseAmount * overdueDays));
+                        fine.setNotes("Multa por %d días de retraso".formatted(overdueDays));
+                        bookLoan.setOverdueDays(overdueDays);
+                    }
+                }
             }
-//            Calculate overdue days
-            int overdueDays= bookLoan.calculateOverdueDays(bookLoan.getDueDate(), LocalDate.now());
-            bookLoan.setOverdueDays(overdueDays);
 
-//            TODO Calculate fine
             bookLoanRepository.save(bookLoan);
             updateCount++;
         }

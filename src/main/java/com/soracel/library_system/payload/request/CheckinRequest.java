@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,7 +15,10 @@ public class CheckinRequest {
     @NotNull(message = "El campo id es obligatorio")
     private  Long bookLoanId;
 
+    @NotNull(message = "El status no puede ser nulo")
     private BookLoanStatus status;
+
+    private BigDecimal fineAmount;
 
     private String notes;
 }

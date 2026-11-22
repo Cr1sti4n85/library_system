@@ -1,6 +1,5 @@
 package com.soracel.library_system.service;
 
-import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.payload.dto.SubscriptionDTO;
 import com.soracel.library_system.payments.CheckoutSession;
 import com.soracel.library_system.payments.PaymentResult;

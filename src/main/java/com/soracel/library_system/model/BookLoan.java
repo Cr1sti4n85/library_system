@@ -7,7 +7,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -34,7 +33,7 @@ public class BookLoan {
     @ManyToOne(fetch = FetchType.LAZY)
     private Book book;
 
-    @OneToMany(mappedBy = "bookLoan", cascade = CascadeType.PERSIST)
+    @OneToMany(mappedBy = "bookLoan", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Fine> fines =  new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
@@ -65,16 +64,13 @@ public class BookLoan {
     @Column(length = 150)
     private String notes;
 
-//    @Builder.Default
-//    private BigDecimal fine = BigDecimal.ZERO;
-
     @Column(nullable = false)
     @Builder.Default
     private Boolean isOverdue = false;
 
     @Builder.Default
     @Column(nullable = false)
-    private Integer overdueDays = 0;
+    private Long overdueDays = 0L;
 
     @CreationTimestamp
     @Column(nullable = false)
@@ -94,7 +90,12 @@ public class BookLoan {
                 && this.renewalCount <= this.maxRenewals;
     }
 
-    public int calculateOverdueDays(LocalDate dueDate, LocalDate today) {
-        return (int) ChronoUnit.DAYS.between(dueDate, today);
+    public long calculateOverdueDays(LocalDate dueDate, LocalDate today) {
+        return ChronoUnit.DAYS.between(dueDate, today);
+    }
+
+    public void addFine(Fine fine) {
+        fines.add(fine);
+        fine.setBookLoan(this);
     }
 }

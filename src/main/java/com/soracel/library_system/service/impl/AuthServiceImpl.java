@@ -1,7 +1,6 @@
 package com.soracel.library_system.service.impl;
 
 import com.soracel.library_system.configurations.JwtUtil;
-import com.soracel.library_system.domain.UserRole;
 import com.soracel.library_system.exception.ExpiredTokenException;
 import com.soracel.library_system.exception.InvalidCredentialsException;
 import com.soracel.library_system.exception.InvalidEmailException;
