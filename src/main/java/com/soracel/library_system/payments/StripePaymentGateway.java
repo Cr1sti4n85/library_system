@@ -206,6 +206,20 @@ public class StripePaymentGateway implements PaymentGateway {
         return (PaymentIntent) stripeObject;
     }
 
+    private <T extends StripeObject> T deserializeStripeObject(Event event, Class<T> clazz) {
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
+                .orElseThrow(() -> new PaymentException(
+                        "Error al deserializar el objeto de Stripe"
+                ));
+
+        if (!clazz.isInstance(stripeObject)) {
+            throw new PaymentException("El objeto de Stripe no corresponde al tipo esperado: "
+                    + clazz.getSimpleName());
+        }
+
+        return clazz.cast(stripeObject);
+    }
+
     private SessionCreateParams.LineItem createLineItem(Fine fine) {
         return SessionCreateParams.LineItem.builder()
                 .setQuantity(1L)

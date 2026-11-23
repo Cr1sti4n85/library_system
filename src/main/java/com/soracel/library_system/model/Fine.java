@@ -3,6 +3,7 @@ package com.soracel.library_system.model;
 import com.soracel.library_system.domain.FineStatus;
 import com.soracel.library_system.domain.FineType;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -70,6 +71,10 @@ public class Fine {
     private LocalDateTime updatedAt;
 
 
-
-
+    public void waive(User currentAdmin, String reason) {
+        this.status = FineStatus.WAIVED;
+        this.waivedBy = currentAdmin;
+        this.waiverReason = reason;
+        this.waivedAt = LocalDateTime.now();
+    }
 }

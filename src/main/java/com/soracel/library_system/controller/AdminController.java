@@ -1,9 +1,12 @@
 package com.soracel.library_system.controller;
 
+import com.soracel.library_system.domain.FineStatus;
+import com.soracel.library_system.domain.FineType;
 import com.soracel.library_system.payload.dto.*;
 import com.soracel.library_system.payload.request.BookLoanSearchRequest;
 import com.soracel.library_system.payload.request.CheckinRequest;
 import com.soracel.library_system.payload.request.CheckoutRequest;
+import com.soracel.library_system.payload.request.WaiveFineRequest;
 import com.soracel.library_system.payload.response.ApiResponse;
 import com.soracel.library_system.payload.response.PageResponse;
 import com.soracel.library_system.payments.PaymentService;
@@ -33,6 +36,7 @@ public class AdminController {
     private final SubscriptionService subscriptionService;
     private final PaymentService paymentService;
     private final BookLoanService bookLoanService;
+    private final FineService fineService;
 
     //USERS
     @GetMapping("/users")
@@ -187,6 +191,23 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.OK).body(Map.of(
                 "updateCount", updateCount
         ));
+    }
+
+    @PutMapping("/fines")
+    public ResponseEntity<FineDTO> waiveFine(@Valid @RequestBody WaiveFineRequest request) {
+        FineDTO dto = fineService.waiveFine(request);
+        return  ResponseEntity.status(HttpStatus.OK).body(dto);
+    }
+
+    @GetMapping("/fines")
+    public ResponseEntity<PageResponse<FineDTO>> getFines(@RequestParam(required = false) FineStatus status,
+                                                    @RequestParam(required = false) FineType type,
+                                                  @RequestParam(required = false) Long userId,
+                                                  @RequestParam(defaultValue = "0") int page,
+                                                  @RequestParam(defaultValue = "20") int size) {
+
+       PageResponse<FineDTO> fines = fineService.getAllFines(status, type, userId, page, size);
+       return ResponseEntity.status(HttpStatus.OK).body(fines);
     }
 
 }
