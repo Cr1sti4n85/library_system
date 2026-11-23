@@ -32,7 +32,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionPlanService  subscriptionPlanService;
     private final UserService userService;
-    private final PaymentService paymentService;
     private final PaymentGateway paymentGateway;
 
 
@@ -56,7 +55,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         Subscription newSub = subscriptionRepository.save(subscription);
 
 
-        return paymentGateway.createCheckoutSession(currentUser.getId(), newSub.getId(), plan.getStripePriceId());
+        return paymentGateway.createSubscriptionCheckoutSession(currentUser.getId(),
+                                                                newSub.getId(),
+                                                                plan.getStripePriceId());
 
     }
 
@@ -116,65 +117,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public void handleWebhookEvent(WebhookRequest request) {
-        paymentGateway.parseWebhook(request).ifPresent(paymentResult -> {
+    public Subscription findByCustomerIdAndStatus(String customerId, SubscriptionStatus status) {
+        return subscriptionRepository
+                .findByCustomerIdAndStatus(customerId, SubscriptionStatus.ACTIVE)
+                .orElseThrow(() -> new NotFoundException("El usuario actual no tiene subscripciones activas"));
 
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.COMPLETED)) {
-
-                userService.updateUserCustomerId(
-                        paymentResult.getMetadata().get("userId"),
-                        paymentResult.getCustomerId());
-
-                activateSubscription(paymentResult);
-
-            }
-
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.SUCCEEDED)){
-
-                User user = userService.findByCustomerId(paymentResult.getCustomerId());
-                Subscription activeSub = subscriptionRepository.findByCustomerIdAndStatus(paymentResult.getCustomerId(),
-                        SubscriptionStatus.ACTIVE).orElseThrow(() ->
-                        new NotFoundException("El usuario actual no tiene subscripciones activas"));
-
-                //TODO save invoice id in payment. will be used as idempotency key
-
-                paymentService.createSubscriptionPayment(
-                        user,
-                        activeSub,
-                        PaymentType.SUBSCRIPTION,
-                        PaymentProvider.STRIPE,
-                        paymentResult.getCustomerId(),
-                        activeSub.getPrice(),
-                        PaymentStatus.SUCCEEDED
-                );
-
-            }
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.FAILED)){
-                User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
-                //DEACTIVATE SUBSCRIPTION
-                Subscription sub = subscriptionRepository
-                        .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE)
-                        .orElseThrow(() -> new NotFoundException("Usuario no tiene suscripciones activas"));
-                sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
-                sub.setIsActive(false);
-                Subscription updatedSub = subscriptionRepository.save(sub);
-
-                //TODO save invoice id in payment. will be used as idempotency key
-                //CREATE FAILED SUBSCRIPTION PAYMENT
-                paymentService.createSubscriptionPayment(
-                        foundUser,
-                        updatedSub,
-                        PaymentType.SUBSCRIPTION,
-                        PaymentProvider.STRIPE,
-                        paymentResult.getCustomerId(),
-                        updatedSub.getPrice(),
-                        PaymentStatus.FAILED
-                );
-
-
-                //TODO notify by email
-
-            }
-        });
     }
+
 }

@@ -22,7 +22,7 @@ public class FineDTO {
     @NotNull(message = "El id de usuario es obligatorio.")
     private Long userId;
 
-    private Long paymentId;
+    private String paymentIntentId;
 
     private String bookTitle;
 

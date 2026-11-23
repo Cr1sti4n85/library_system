@@ -25,13 +25,20 @@ public class FineMapper {
                                         .notes(fine.getNotes());
 
         if (fine.getWaivedBy() != null) {
-            builder.waivedByUserId(fine.getWaivedBy().getId());
+            builder.waivedByUserId(fine.getWaivedBy().getId())
+                    .waivedAt(fine.getWaivedAt())
+                    .waivedByUsername(fine.getWaivedBy().getFullName())
+                    .waiverReason(fine.getWaiverReason());
 
         }
 
-        builder.waivedAt(fine.getWaivedAt())
-                .waiverReason(fine.getWaiverReason())
-                .paidAt(fine.getPaidAt());
+        if (fine.getPaymentIntentId() != null) {
+            builder.paymentIntentId(fine.getPaymentIntentId());
+        }
+
+        builder.paidAt(fine.getPaidAt())
+                .createdAt(fine.getCreatedAt())
+                .updatedAt(fine.getUpdatedAt());
 
         return builder.build();
 

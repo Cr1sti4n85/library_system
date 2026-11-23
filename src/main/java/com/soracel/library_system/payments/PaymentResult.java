@@ -16,4 +16,5 @@ public class PaymentResult {
     private PaymentStatus paymentStatus;
     private String customerId;
     private Map<String, Long> metadata;
+    private String paymentIntentId;
 }

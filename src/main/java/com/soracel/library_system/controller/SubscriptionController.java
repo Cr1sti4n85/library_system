@@ -33,12 +33,4 @@ public class SubscriptionController {
     }
 
 
-    @PostMapping("/webhook")
-    public void handleWebhook(
-            @RequestHeader Map<String, String> headers,
-            @RequestBody String payload
-    ){
-        subscriptionService.handleWebhookEvent(new WebhookRequest(headers, payload));
-    }
-
 }

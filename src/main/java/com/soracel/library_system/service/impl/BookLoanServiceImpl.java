@@ -277,7 +277,7 @@ public class BookLoanServiceImpl implements BookLoanService {
                         .bookLoan(bookLoan)
                         .user(bookLoan.getUser())
                         .fineType(FineType.OVERDUE)
-                        .amount(BigDecimal.valueOf(overdueBaseAmount))
+                        .amount(BigDecimal.valueOf(overdueBaseAmount + 3))
                         .status(FineStatus.PENDING)
                         .fineReason("Retraso en devolución")
                         .notes("Multa por 1 día de retraso")
@@ -289,7 +289,7 @@ public class BookLoanServiceImpl implements BookLoanService {
                 for (Fine fine : fines) {
                     if (fine.getFineType().equals(FineType.OVERDUE) && fine.getStatus().equals(FineStatus.PENDING)) {
                         long overdueDays= bookLoan.calculateOverdueDays(bookLoan.getDueDate(), LocalDate.now());
-                        fine.setAmount(BigDecimal.valueOf(overdueBaseAmount * overdueDays));
+                        fine.setAmount(BigDecimal.valueOf(overdueBaseAmount + (overdueDays * 3)));
                         fine.setNotes("Multa por %d días de retraso".formatted(overdueDays));
                         bookLoan.setOverdueDays(overdueDays);
                     }

@@ -1,11 +1,13 @@
 package com.soracel.library_system.payments;
 
 import com.soracel.library_system.domain.PaymentStatus;
+import com.soracel.library_system.model.Fine;
 import com.stripe.StripeClient;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.Invoice;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
@@ -14,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,7 +36,7 @@ public class StripePaymentGateway implements PaymentGateway {
     private String websiteUrl;
 
     @Override
-    public CheckoutSession createCheckoutSession(Long userId, Long subscriptionId, String priceId) {
+    public CheckoutSession createSubscriptionCheckoutSession(Long userId, Long subscriptionId, String priceId) {
         StripeClient client = new StripeClient(secretKey);
 
         SessionCreateParams params = new SessionCreateParams.Builder()
@@ -67,6 +70,32 @@ public class StripePaymentGateway implements PaymentGateway {
     }
 
     @Override
+    public CheckoutSession createFineCheckoutSession(Fine fine) {
+        StripeClient client = new StripeClient(secretKey);
+
+        SessionCreateParams.Builder builder = SessionCreateParams.builder()
+                .setUiMode(SessionCreateParams.UiMode.HOSTED_PAGE)
+                .setSuccessUrl(websiteUrl + "/success?session_id={CHECKOUT_SESSION_ID}")
+                .setCancelUrl(websiteUrl + "/cancel?session_id={CHECKOUT_SESSION_ID}")
+                .setMode(SessionCreateParams.Mode.PAYMENT)
+                .putMetadata("fineId", String.valueOf(fine.getId()))
+                .setSubmitType(SessionCreateParams.SubmitType.AUTO)
+                .setIntegrationIdentifier("hosted_web_0003")
+                .setOriginContext(SessionCreateParams.OriginContext.WEB);
+
+        var lineItem = createLineItem(fine);
+        builder.addLineItem(lineItem);
+        try {
+            Session session = client.v1().checkout().sessions().create(builder.build());
+
+            return new CheckoutSession(session.getUrl());
+        } catch (StripeException e) {
+            log.error(e.toString());
+            throw new PaymentException("Ocurrió un error al procesar el pago");
+        }
+    }
+
+    @Override
     public Optional<PaymentResult> parseWebhook(WebhookRequest request){
         StripeClient client = new StripeClient(secretKey);
 
@@ -82,7 +111,8 @@ public class StripePaymentGateway implements PaymentGateway {
                     Optional.of(PaymentResult.builder()
                             .paymentStatus(PaymentStatus.COMPLETED)
                             .customerId(extractCustomerId(event))
-                            .metadata(extractMetadata(event))
+                            .metadata(extractSessionMetadata(event))
+                            .paymentIntentId(extractPaymentIntentIdFromSession(event))
                             .build());
 
                 case "invoice.paid" ->
@@ -91,11 +121,23 @@ public class StripePaymentGateway implements PaymentGateway {
                              .customerId(extractCustomerId(event))
                             .build());
 
+                case "payment_intent.succeeded" ->
+                        Optional.of(PaymentResult.builder()
+                                .paymentStatus(PaymentStatus.SUCCEEDED)
+                                .paymentIntentId(extractPaymentIntentId(event))
+                                .build());
+
                 case "invoice.payment_failed" ->
                     Optional.of(PaymentResult.builder()
                             .paymentStatus(PaymentStatus.FAILED)
                             .customerId(extractCustomerId(event))
                             .build());
+
+                case "payment_intent.payment_failed" ->
+                        Optional.of(PaymentResult.builder()
+                                .paymentStatus(PaymentStatus.FAILED)
+                                .paymentIntentId(extractPaymentIntentId(event))
+                                .build());
 
                 default ->
                     Optional.empty();
@@ -107,14 +149,20 @@ public class StripePaymentGateway implements PaymentGateway {
         }
     }
 
-    private Map<String, Long> extractMetadata(Event event){
+    private Map<String, Long> extractSessionMetadata(Event event){
             Session session = deserializeSession(event);
+            if (session.getMetadata().get("fineId") != null){
+                Long fineId = Long.parseLong(session.getMetadata().get("fineId"));
+                return Map.of(
+                        "fineId", fineId
+                );
+            }
             Long userId = Long.parseLong(session.getMetadata().get("userId"));
             Long subscriptionId = Long.parseLong(session.getMetadata().get("subscriptionId"));
-        return Map.of(
+            return Map.of(
                 "userId", userId,
                 "subscriptionId", subscriptionId
-        );
+            );
     }
 
     private String extractCustomerId(Event event){
@@ -127,6 +175,15 @@ public class StripePaymentGateway implements PaymentGateway {
             return invoice.getCustomer();
     }
 
+    private String extractPaymentIntentIdFromSession(Event event) {
+        Session session = deserializeSession(event);
+        return session.getPaymentIntent();
+    }
+
+    private String extractPaymentIntentId(Event event) {
+        PaymentIntent paymentIntent = deserializePaymentIntent(event);
+        return paymentIntent.getId();
+    }
 
     private Session deserializeSession(Event event) {
         StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
@@ -140,5 +197,50 @@ public class StripePaymentGateway implements PaymentGateway {
                 .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
 
         return (Invoice) stripeObject;
+    }
+
+    private PaymentIntent deserializePaymentIntent(Event event) {
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
+                .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
+
+        return (PaymentIntent) stripeObject;
+    }
+
+    private <T extends StripeObject> T deserializeStripeObject(Event event, Class<T> clazz) {
+        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
+                .orElseThrow(() -> new PaymentException(
+                        "Error al deserializar el objeto de Stripe"
+                ));
+
+        if (!clazz.isInstance(stripeObject)) {
+            throw new PaymentException("El objeto de Stripe no corresponde al tipo esperado: "
+                    + clazz.getSimpleName());
+        }
+
+        return clazz.cast(stripeObject);
+    }
+
+    private SessionCreateParams.LineItem createLineItem(Fine fine) {
+        return SessionCreateParams.LineItem.builder()
+                .setQuantity(1L)
+                .setPriceData(createPriceData(fine))
+                .build();
+    }
+
+    private SessionCreateParams.LineItem.PriceData createPriceData(Fine fine) {
+        return SessionCreateParams.LineItem.PriceData.builder()
+                .setCurrency("MXN")
+                .setUnitAmountDecimal(fine.getAmount().multiply(BigDecimal.valueOf(100)))
+                .setProductData(createProductData(fine.getFineReason()))
+                .build();
+    }
+
+    private SessionCreateParams.LineItem.PriceData.ProductData createProductData(String reason) {
+        return SessionCreateParams
+                .LineItem.PriceData.ProductData.builder()
+                .setName(reason)
+                //TODO mock image, implement library-related image
+                .addImage("https://i.pinimg.com/736x/a7/7a/8b/a77a8b275f7c0894bcf0f8094fde7ad6.jpg")
+                .build();
     }
 }
