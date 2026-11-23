@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -17,4 +18,5 @@ public class PaymentResult {
     private String customerId;
     private Map<String, Long> metadata;
     private String paymentIntentId;
+    private LocalDateTime paidAt;
 }

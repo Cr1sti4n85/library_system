@@ -6,7 +6,6 @@ import com.stripe.StripeClient;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
-import com.stripe.model.Invoice;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
@@ -17,6 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -102,7 +103,6 @@ public class StripePaymentGateway implements PaymentGateway {
         var payload = request.getPayload();
         var signature = request.getHeaders().get("Stripe-Signature");
 
-//        Event event = null;
         try {
             Event event = client.constructEvent(payload, signature, webhookSecretKey);
 
@@ -115,27 +115,19 @@ public class StripePaymentGateway implements PaymentGateway {
                             .paymentIntentId(extractPaymentIntentIdFromSession(event))
                             .build());
 
-                case "invoice.paid" ->
-                     Optional.of(PaymentResult.builder()
-                            .paymentStatus(PaymentStatus.SUCCEEDED)
-                             .customerId(extractCustomerId(event))
-                            .build());
-
                 case "payment_intent.succeeded" ->
                         Optional.of(PaymentResult.builder()
                                 .paymentStatus(PaymentStatus.SUCCEEDED)
                                 .paymentIntentId(extractPaymentIntentId(event))
+                                .customerId(extractCustomerId(event))
+                                .paidAt(extractCreationPayment(event))
                                 .build());
-
-                case "invoice.payment_failed" ->
-                    Optional.of(PaymentResult.builder()
-                            .paymentStatus(PaymentStatus.FAILED)
-                            .customerId(extractCustomerId(event))
-                            .build());
 
                 case "payment_intent.payment_failed" ->
                         Optional.of(PaymentResult.builder()
                                 .paymentStatus(PaymentStatus.FAILED)
+                                .customerId(extractCustomerId(event))
+                                .paidAt(extractCreationPayment(event))
                                 .paymentIntentId(extractPaymentIntentId(event))
                                 .build());
 
@@ -165,14 +157,14 @@ public class StripePaymentGateway implements PaymentGateway {
             );
     }
 
+    //in one-time payments customerId = null
     private String extractCustomerId(Event event){
         if (event.getType().equals("checkout.session.completed")){
             Session session = deserializeSession(event);
             return session.getCustomer();
-
         }
-            Invoice invoice = deserializeInvoice(event);
-            return invoice.getCustomer();
+            PaymentIntent intent = deserializePaymentIntent(event);
+            return intent.getCustomer();
     }
 
     private String extractPaymentIntentIdFromSession(Event event) {
@@ -185,18 +177,18 @@ public class StripePaymentGateway implements PaymentGateway {
         return paymentIntent.getId();
     }
 
+    private LocalDateTime extractCreationPayment(Event event) {
+        PaymentIntent paymentIntent = deserializeStripeObject(event,  PaymentIntent.class);
+        long unixSeconds = paymentIntent.getCreated();
+
+        return Instant.ofEpochSecond(unixSeconds).atZone(ZoneOffset.UTC).toLocalDateTime();
+    }
+
     private Session deserializeSession(Event event) {
         StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
                 .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
 
         return (Session) stripeObject;
-    }
-
-    private Invoice deserializeInvoice(Event event) {
-        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
-                .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
-
-        return (Invoice) stripeObject;
     }
 
     private PaymentIntent deserializePaymentIntent(Event event) {

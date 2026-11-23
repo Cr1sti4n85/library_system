@@ -8,7 +8,6 @@ import com.soracel.library_system.model.Payment;
 import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.PaymentDTO;
-import com.soracel.library_system.payments.PaymentService;
 import com.soracel.library_system.repository.FineRepository;
 import com.soracel.library_system.repository.PaymentRepository;
 import com.soracel.library_system.repository.SubscriptionRepository;
@@ -33,8 +32,13 @@ public class PaymentServiceImpl implements PaymentService {
     private final FineRepository fineRepository;
 
     @Override
-    public void createPayment(User user, Subscription subscription, Fine fine, PaymentType paymentType,
-                                 PaymentProvider provider, String customerId, BigDecimal amount, PaymentStatus status) {
+    public void createPayment(User user, Subscription subscription,
+                              Fine fine, PaymentType paymentType,
+                              PaymentProvider provider, String customerId,
+                              BigDecimal amount, PaymentStatus status,
+                              LocalDateTime paidAt
+
+    ) {
 
         Payment payment;
         if (subscription == null) {
@@ -46,6 +50,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .paymentType(paymentType)
                     .status(status)
                     .amount(amount)
+                    .paidAt(paidAt)
                     .build();
         } else {
             payment = Payment.builder()
@@ -56,6 +61,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .paymentType(paymentType)
                     .status(status)
                     .amount(subscription.getPrice())
+                    .paidAt(paidAt)
                     .build();
         }
 
@@ -75,7 +81,6 @@ public class PaymentServiceImpl implements PaymentService {
 
             if (paymentResult.getPaymentStatus().equals(PaymentStatus.COMPLETED)) {
 
-                //todo: check if it's fine or subscription payment
                 if (paymentResult.getMetadata().containsKey("fineId")){
                     //update fine
                     Fine fine = fineRepository.findById(paymentResult.getMetadata().get("fineId"))
@@ -96,7 +101,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             if (paymentResult.getPaymentStatus().equals(PaymentStatus.SUCCEEDED)){
 
-                if (paymentResult.getPaymentIntentId() != null){
+                if (paymentResult.getCustomerId() == null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada por payment id"));
 
@@ -108,7 +113,8 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             null,
                             fine.getAmount(),
-                            PaymentStatus.SUCCEEDED
+                            PaymentStatus.SUCCEEDED,
+                            paymentResult.getPaidAt()
                     );
 
                 } else {
@@ -117,7 +123,7 @@ public class PaymentServiceImpl implements PaymentService {
                             .findByCustomerIdAndStatus(
                                     paymentResult.getCustomerId(),
                                     SubscriptionStatus.ACTIVE);
-                    //TODO save invoice id in payment. will be used as idempotency key
+                    //TODO save payment intent id in payment. will be used as idempotency key
 
                     createPayment(
                             user,
@@ -127,13 +133,14 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             paymentResult.getCustomerId(),
                             activeSub.getPrice(),
-                            PaymentStatus.SUCCEEDED
+                            PaymentStatus.SUCCEEDED,
+                            paymentResult.getPaidAt()
                     );
                 }
 
             }
             if (paymentResult.getPaymentStatus().equals(PaymentStatus.FAILED)){
-                if (paymentResult.getPaymentIntentId() != null){
+                if (paymentResult.getCustomerId() == null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
 
@@ -145,7 +152,8 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             null,
                             fine.getAmount(),
-                            PaymentStatus.FAILED
+                            PaymentStatus.FAILED,
+                            paymentResult.getPaidAt()
                     );
                 } else {
                     User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
@@ -166,7 +174,8 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             paymentResult.getCustomerId(),
                             updatedSub.getPrice(),
-                            PaymentStatus.FAILED
+                            PaymentStatus.FAILED,
+                            paymentResult.getPaidAt()
                     );
                 }
                 //TODO notify by email

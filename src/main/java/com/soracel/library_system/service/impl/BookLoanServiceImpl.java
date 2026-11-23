@@ -131,7 +131,9 @@ public class BookLoanServiceImpl implements BookLoanService {
 
         BookLoanStatus status =  request.getStatus();
 
-        if (status == null) status = BookLoanStatus.RETURNED;
+        if (loan.getStatus().equals(BookLoanStatus.OVERDUE) || loan.getStatus().equals(BookLoanStatus.CHECKED_OUT)) {
+            status = BookLoanStatus.RETURNED;
+        }
 
         loan.setStatus(status);
         loan.setNotes(request.getNotes());
@@ -167,18 +169,20 @@ public class BookLoanServiceImpl implements BookLoanService {
                     .notes(request.getNotes())
                     .build();
         }
-        Book book = null;
+        Book book = loan.getBook();
         if (status != BookLoanStatus.LOST){
             loan.setReturnDate(LocalDate.now());
             loan.setLoanType(BookLoanType.RETURN);
-            book = loan.getBook();
             book.setAvailableCopies(book.getAvailableCopies() + 1);
             bookRepository.save(book);
         } else {
-            book = loan.getBook();
             book.setTotalCopies(book.getTotalCopies() - 1);
+            bookRepository.save(book);
         }
-        loan.addFine(fine);
+
+        if(!status.equals(BookLoanStatus.RETURNED)){
+            loan.addFine(fine);
+        }
         BookLoan savedLoan = bookLoanRepository.save(loan);
         return BookLoanMapper.toDTO(savedLoan);
     }

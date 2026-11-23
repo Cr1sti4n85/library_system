@@ -1,8 +1,5 @@
 package com.soracel.library_system.service.impl;
 
-import com.soracel.library_system.domain.PaymentProvider;
-import com.soracel.library_system.domain.PaymentStatus;
-import com.soracel.library_system.domain.PaymentType;
 import com.soracel.library_system.domain.SubscriptionStatus;
 import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.exception.SubscriptionException;
