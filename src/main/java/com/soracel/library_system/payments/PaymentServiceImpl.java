@@ -90,8 +90,8 @@ public class PaymentServiceImpl implements PaymentService {
             }
 
             if (PaymentStatus.FINE_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
-
-                if (paymentResult.getPaymentIntentId() != null){
+                //in subscriptions it's not null
+                if (paymentResult.getCustomerId() == null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada por payment id"));
 
@@ -121,6 +121,10 @@ public class PaymentServiceImpl implements PaymentService {
                     subscription.setIsActive(true);
                     subscription = subscriptionRepository.save(subscription);
                 }
+                if (SubscriptionStatus.ACTIVE == subscription.getStatus()){
+                    subscription.setStartDate(paymentResult.getSubscriptionDates().get("startDate"));
+                    subscription.setEndDate(paymentResult.getSubscriptionDates().get("endDate"));
+                }
 
                 createPayment(
                         user,
@@ -135,7 +139,7 @@ public class PaymentServiceImpl implements PaymentService {
                 );
             }
             if (PaymentStatus.FINE_FAILED ==  paymentResult.getPaymentStatus()) {
-                if (paymentResult.getPaymentIntentId() != null){
+                if (paymentResult.getCustomerId() == null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
 
