@@ -96,11 +96,6 @@ public class Subscription {
         return ChronoUnit.DAYS.between(LocalDate.now(), this.endDate);
     }
 
-    public void calculateEndDate() {
-        if (plan != null && startDate != null) {
-            this.endDate = startDate.plusDays(plan.getDurationDays());
-        }
-    }
 
     public void initializeSubscriptionFromPlan() {
         if (plan != null) {
@@ -110,10 +105,6 @@ public class Subscription {
             this.maxBooksAllowed = plan.getMaxBooksAllowed();
             this.maxDaysPerBook = plan.getMaxDaysPerBook();
 
-            if (startDate == null) {
-                this.startDate = LocalDate.now();
-            }
-            calculateEndDate();
         }
     }
 
