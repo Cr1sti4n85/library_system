@@ -8,7 +8,6 @@ import com.soracel.library_system.model.Payment;
 import com.soracel.library_system.model.Subscription;
 import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.PaymentDTO;
-import com.soracel.library_system.payments.PaymentService;
 import com.soracel.library_system.repository.FineRepository;
 import com.soracel.library_system.repository.PaymentRepository;
 import com.soracel.library_system.repository.SubscriptionRepository;
@@ -33,33 +32,30 @@ public class PaymentServiceImpl implements PaymentService {
     private final FineRepository fineRepository;
 
     @Override
-    public void createPayment(User user, Subscription subscription, Fine fine, PaymentType paymentType,
-                                 PaymentProvider provider, String customerId, BigDecimal amount, PaymentStatus status) {
+    public void createPayment(User user, Subscription subscription,
+                              Fine fine, PaymentType paymentType,
+                              PaymentProvider provider, String customerId,
+                              BigDecimal amount, PaymentStatus status,
+                              LocalDateTime paidAt
 
-        Payment payment;
+    ) {
+
+        Payment.PaymentBuilder builder = Payment.builder()
+                .user(user)
+                .paymentProvider(provider)
+                .customerId(customerId)
+                .paymentType(paymentType)
+                .status(status)
+                .amount(amount)
+                .paidAt(paidAt);
+
         if (subscription == null) {
-            payment = Payment.builder()
-                    .user(user)
-                    .fine(fine)
-                    .paymentProvider(provider)
-                    .customerId(customerId)
-                    .paymentType(paymentType)
-                    .status(status)
-                    .amount(amount)
-                    .build();
+            builder.fine(fine);
         } else {
-            payment = Payment.builder()
-                    .user(user)
-                    .subscription(subscription)
-                    .paymentProvider(provider)
-                    .customerId(customerId)
-                    .paymentType(paymentType)
-                    .status(status)
-                    .amount(subscription.getPrice())
-                    .build();
+            builder.subscription(subscription);
         }
 
-        paymentRepository.save(payment);
+        paymentRepository.save(builder.build());
     }
 
 
@@ -73,9 +69,8 @@ public class PaymentServiceImpl implements PaymentService {
     public void handleWebhookEvent(WebhookRequest request) {
         paymentGateway.parseWebhook(request).ifPresent(paymentResult -> {
 
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.COMPLETED)) {
+            if (PaymentStatus.COMPLETED == paymentResult.getPaymentStatus()) {
 
-                //todo: check if it's fine or subscription payment
                 if (paymentResult.getMetadata().containsKey("fineId")){
                     //update fine
                     Fine fine = fineRepository.findById(paymentResult.getMetadata().get("fineId"))
@@ -94,7 +89,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             }
 
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.SUCCEEDED)){
+            if (PaymentStatus.FINE_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
 
                 if (paymentResult.getPaymentIntentId() != null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
@@ -108,31 +103,38 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             null,
                             fine.getAmount(),
-                            PaymentStatus.SUCCEEDED
+                            PaymentStatus.FINE_SUCCEEDED,
+                            paymentResult.getPaidAt()
                     );
 
-                } else {
-                    User user = userService.findByCustomerId(paymentResult.getCustomerId());
-                    Subscription activeSub = subscriptionService
-                            .findByCustomerIdAndStatus(
-                                    paymentResult.getCustomerId(),
-                                    SubscriptionStatus.ACTIVE);
-                    //TODO save invoice id in payment. will be used as idempotency key
-
-                    createPayment(
-                            user,
-                            activeSub,
-                            null,
-                            PaymentType.SUBSCRIPTION,
-                            PaymentProvider.STRIPE,
-                            paymentResult.getCustomerId(),
-                            activeSub.getPrice(),
-                            PaymentStatus.SUCCEEDED
-                    );
                 }
 
+            } if (PaymentStatus.SUBSCRIPTION_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
+                User user = userService.findByCustomerId(paymentResult.getCustomerId());
+
+                Subscription subscription = subscriptionService
+                                                .findBySubscriptionId(paymentResult.getSubscriptionId());
+
+
+                if (SubscriptionStatus.PAYMENT_FAILED == subscription.getStatus()){
+                    subscription.setStatus(SubscriptionStatus.ACTIVE);
+                    subscription.setIsActive(true);
+                    subscription = subscriptionRepository.save(subscription);
+                }
+
+                createPayment(
+                        user,
+                        subscription,
+                        null,
+                        PaymentType.SUBSCRIPTION,
+                        PaymentProvider.STRIPE,
+                        paymentResult.getCustomerId(),
+                        subscription.getPrice(),
+                        PaymentStatus.SUBSCRIPTION_SUCCEEDED,
+                        paymentResult.getPaidAt()
+                );
             }
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.FAILED)){
+            if (PaymentStatus.FINE_FAILED ==  paymentResult.getPaymentStatus()) {
                 if (paymentResult.getPaymentIntentId() != null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
@@ -145,30 +147,31 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             null,
                             fine.getAmount(),
-                            PaymentStatus.FAILED
-                    );
-                } else {
-                    User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
-                    //DEACTIVATE SUBSCRIPTION
-                    Subscription sub = subscriptionService
-                            .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE);
-                    sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
-                    sub.setIsActive(false);
-                    Subscription updatedSub = subscriptionRepository.save(sub);
-
-                    //TODO save invoice id in payment. will be used as idempotency key
-                    //CREATE FAILED SUBSCRIPTION PAYMENT
-                    createPayment(
-                            foundUser,
-                            updatedSub,
-                            null,
-                            PaymentType.SUBSCRIPTION,
-                            PaymentProvider.STRIPE,
-                            paymentResult.getCustomerId(),
-                            updatedSub.getPrice(),
-                            PaymentStatus.FAILED
+                            PaymentStatus.FINE_FAILED,
+                            paymentResult.getPaidAt()
                     );
                 }
+            }
+            if (PaymentStatus.SUBSCRIPTION_FAILED ==  paymentResult.getPaymentStatus()) {
+                User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
+                Subscription sub = subscriptionService
+                        .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE);
+                sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
+                sub.setIsActive(false);
+                Subscription updatedSub = subscriptionRepository.save(sub);
+
+                //CREATE FAILED SUBSCRIPTION PAYMENT
+                createPayment(
+                        foundUser,
+                        updatedSub,
+                        null,
+                        PaymentType.SUBSCRIPTION,
+                        PaymentProvider.STRIPE,
+                        paymentResult.getCustomerId(),
+                        updatedSub.getPrice(),
+                        PaymentStatus.SUBSCRIPTION_FAILED,
+                        paymentResult.getPaidAt()
+                );
                 //TODO notify by email
 
             }

@@ -39,6 +39,8 @@ public class Subscription {
 
     private String customerId;
 
+    private String subscriptionId;
+
     private String planName;
 
     private String planCode;

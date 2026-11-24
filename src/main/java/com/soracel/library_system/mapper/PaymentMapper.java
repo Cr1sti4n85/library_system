@@ -11,18 +11,24 @@ public class PaymentMapper {
         PaymentDTO.PaymentDTOBuilder builder = PaymentDTO.builder()
                 .id(payment.getId())
                 .currency(payment.getCurrency())
-                .paidAt(payment.getPaidAt());
-
-        if (payment.getUser() != null) {
-            builder.userId(payment.getUser().getId())
-                    .fullName(payment.getUser().getFullName())
-                    .email(payment.getUser().getEmail());
-        }
+                .paidAt(payment.getPaidAt())
+                .userId(payment.getUser().getId())
+                .fullName(payment.getUser().getFullName())
+                .email(payment.getUser().getEmail());
 
         if (payment.getSubscription() != null) {
             builder.subscriptionId(payment.getSubscription().getId())
                     .planName(payment.getSubscription().getPlanName());
         }
+        if (payment.getFine() != null) {
+            builder.fineId(payment.getFine().getId());
+        }
+        builder.paymentProvider(payment.getPaymentProvider())
+                .paymentType(payment.getPaymentType())
+                .status(payment.getStatus())
+                .amount(payment.getAmount())
+                .createdAt(payment.getCreatedAt())
+                .updatedAt(payment.getUpdatedAt());
         return builder.build();
     }
 

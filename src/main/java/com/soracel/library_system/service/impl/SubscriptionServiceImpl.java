@@ -1,8 +1,5 @@
 package com.soracel.library_system.service.impl;
 
-import com.soracel.library_system.domain.PaymentProvider;
-import com.soracel.library_system.domain.PaymentStatus;
-import com.soracel.library_system.domain.PaymentType;
 import com.soracel.library_system.domain.SubscriptionStatus;
 import com.soracel.library_system.exception.NotFoundException;
 import com.soracel.library_system.exception.SubscriptionException;
@@ -39,6 +36,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     public CheckoutSession subscribe(SubscriptionDTO subscriptionDTO) {
 
         User currentUser = userService.getCurrentUserEntity();
+        Subscription activeSub = subscriptionRepository
+                                .findByUserIdAndIsActive(currentUser.getId(), true)
+                                .orElse(null);
+        if (activeSub != null) throw new SubscriptionException("Ya tienes una cuenta activa");
+
         SubscriptionPlan plan = subscriptionPlanService.getSubscriptionPlanById(subscriptionDTO.getPlanId());
 
         Optional<Subscription> existingSub = subscriptionRepository.findByUserIdAndPlanIdAndStatus(
@@ -96,6 +98,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
         sub.setCustomerId(paymentResult.getCustomerId());
         sub.setIsActive(true);
         sub.setStatus(SubscriptionStatus.ACTIVE);
+        sub.setSubscriptionId(paymentResult.getSubscriptionId());
         subscriptionRepository.save(sub);
     }
 
@@ -122,6 +125,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                 .findByCustomerIdAndStatus(customerId, SubscriptionStatus.ACTIVE)
                 .orElseThrow(() -> new NotFoundException("El usuario actual no tiene subscripciones activas"));
 
+    }
+
+    @Override
+    public Subscription findBySubscriptionId(String subscriptionId) {
+        return subscriptionRepository.findBySubscriptionId(subscriptionId)
+                .orElseThrow(() -> new SubscriptionException("El id de suscripción proporcionado es incorrecto"));
     }
 
 }

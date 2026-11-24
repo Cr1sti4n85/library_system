@@ -26,6 +26,8 @@ public class PaymentDTO {
 
     private Long subscriptionId;
 
+    private Long fineId;
+
     private String planName;
 
     @Enumerated(EnumType.STRING)

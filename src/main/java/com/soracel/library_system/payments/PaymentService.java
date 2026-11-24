@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public interface PaymentService {
     void createPayment(User user,
@@ -20,7 +21,9 @@ public interface PaymentService {
                           PaymentProvider provider,
                           String customerId,
                           BigDecimal amount,
-                          PaymentStatus status);
+                          PaymentStatus status,
+                          LocalDateTime paidAt
+                          );
 
     void handleWebhookEvent(WebhookRequest request);
     
