@@ -19,4 +19,5 @@ public class PaymentResult {
     private Map<String, Long> metadata;
     private String paymentIntentId;
     private LocalDateTime paidAt;
+    private String subscriptionId;
 }

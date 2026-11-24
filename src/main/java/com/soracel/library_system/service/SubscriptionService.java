@@ -26,4 +26,5 @@ public interface SubscriptionService {
 
     Subscription findByCustomerIdAndStatus(String customerId, SubscriptionStatus status);
 
+    Subscription findBySubscriptionId(String subscriptionId);
 }

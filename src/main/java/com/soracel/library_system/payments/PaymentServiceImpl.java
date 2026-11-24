@@ -40,32 +40,22 @@ public class PaymentServiceImpl implements PaymentService {
 
     ) {
 
-        Payment payment;
+        Payment.PaymentBuilder builder = Payment.builder()
+                .user(user)
+                .paymentProvider(provider)
+                .customerId(customerId)
+                .paymentType(paymentType)
+                .status(status)
+                .amount(amount)
+                .paidAt(paidAt);
+
         if (subscription == null) {
-            payment = Payment.builder()
-                    .user(user)
-                    .fine(fine)
-                    .paymentProvider(provider)
-                    .customerId(customerId)
-                    .paymentType(paymentType)
-                    .status(status)
-                    .amount(amount)
-                    .paidAt(paidAt)
-                    .build();
+            builder.fine(fine);
         } else {
-            payment = Payment.builder()
-                    .user(user)
-                    .subscription(subscription)
-                    .paymentProvider(provider)
-                    .customerId(customerId)
-                    .paymentType(paymentType)
-                    .status(status)
-                    .amount(subscription.getPrice())
-                    .paidAt(paidAt)
-                    .build();
+            builder.subscription(subscription);
         }
 
-        paymentRepository.save(payment);
+        paymentRepository.save(builder.build());
     }
 
 
@@ -79,7 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
     public void handleWebhookEvent(WebhookRequest request) {
         paymentGateway.parseWebhook(request).ifPresent(paymentResult -> {
 
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.COMPLETED)) {
+            if (PaymentStatus.COMPLETED == paymentResult.getPaymentStatus()) {
 
                 if (paymentResult.getMetadata().containsKey("fineId")){
                     //update fine
@@ -99,9 +89,9 @@ public class PaymentServiceImpl implements PaymentService {
 
             }
 
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.SUCCEEDED)){
+            if (PaymentStatus.FINE_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
 
-                if (paymentResult.getCustomerId() == null){
+                if (paymentResult.getPaymentIntentId() != null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada por payment id"));
 
@@ -113,34 +103,39 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             null,
                             fine.getAmount(),
-                            PaymentStatus.SUCCEEDED,
+                            PaymentStatus.FINE_SUCCEEDED,
                             paymentResult.getPaidAt()
                     );
 
-                } else {
-                    User user = userService.findByCustomerId(paymentResult.getCustomerId());
-                    Subscription activeSub = subscriptionService
-                            .findByCustomerIdAndStatus(
-                                    paymentResult.getCustomerId(),
-                                    SubscriptionStatus.ACTIVE);
-                    //TODO save payment intent id in payment. will be used as idempotency key
-
-                    createPayment(
-                            user,
-                            activeSub,
-                            null,
-                            PaymentType.SUBSCRIPTION,
-                            PaymentProvider.STRIPE,
-                            paymentResult.getCustomerId(),
-                            activeSub.getPrice(),
-                            PaymentStatus.SUCCEEDED,
-                            paymentResult.getPaidAt()
-                    );
                 }
 
+            } if (PaymentStatus.SUBSCRIPTION_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
+                User user = userService.findByCustomerId(paymentResult.getCustomerId());
+
+                Subscription subscription = subscriptionService
+                                                .findBySubscriptionId(paymentResult.getSubscriptionId());
+
+
+                if (SubscriptionStatus.PAYMENT_FAILED == subscription.getStatus()){
+                    subscription.setStatus(SubscriptionStatus.ACTIVE);
+                    subscription.setIsActive(true);
+                    subscription = subscriptionRepository.save(subscription);
+                }
+
+                createPayment(
+                        user,
+                        subscription,
+                        null,
+                        PaymentType.SUBSCRIPTION,
+                        PaymentProvider.STRIPE,
+                        paymentResult.getCustomerId(),
+                        subscription.getPrice(),
+                        PaymentStatus.SUBSCRIPTION_SUCCEEDED,
+                        paymentResult.getPaidAt()
+                );
             }
-            if (paymentResult.getPaymentStatus().equals(PaymentStatus.FAILED)){
-                if (paymentResult.getCustomerId() == null){
+            if (PaymentStatus.FINE_FAILED ==  paymentResult.getPaymentStatus()) {
+                if (paymentResult.getPaymentIntentId() != null){
                     Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
 
@@ -152,32 +147,31 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentProvider.STRIPE,
                             null,
                             fine.getAmount(),
-                            PaymentStatus.FAILED,
-                            paymentResult.getPaidAt()
-                    );
-                } else {
-                    User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
-                    //DEACTIVATE SUBSCRIPTION
-                    Subscription sub = subscriptionService
-                            .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE);
-                    sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
-                    sub.setIsActive(false);
-                    Subscription updatedSub = subscriptionRepository.save(sub);
-
-                    //TODO save invoice id in payment. will be used as idempotency key
-                    //CREATE FAILED SUBSCRIPTION PAYMENT
-                    createPayment(
-                            foundUser,
-                            updatedSub,
-                            null,
-                            PaymentType.SUBSCRIPTION,
-                            PaymentProvider.STRIPE,
-                            paymentResult.getCustomerId(),
-                            updatedSub.getPrice(),
-                            PaymentStatus.FAILED,
+                            PaymentStatus.FINE_FAILED,
                             paymentResult.getPaidAt()
                     );
                 }
+            }
+            if (PaymentStatus.SUBSCRIPTION_FAILED ==  paymentResult.getPaymentStatus()) {
+                User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
+                Subscription sub = subscriptionService
+                        .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE);
+                sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
+                sub.setIsActive(false);
+                Subscription updatedSub = subscriptionRepository.save(sub);
+
+                //CREATE FAILED SUBSCRIPTION PAYMENT
+                createPayment(
+                        foundUser,
+                        updatedSub,
+                        null,
+                        PaymentType.SUBSCRIPTION,
+                        PaymentProvider.STRIPE,
+                        paymentResult.getCustomerId(),
+                        updatedSub.getPrice(),
+                        PaymentStatus.SUBSCRIPTION_FAILED,
+                        paymentResult.getPaidAt()
+                );
                 //TODO notify by email
 
             }

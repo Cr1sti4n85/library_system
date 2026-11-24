@@ -6,6 +6,7 @@ import com.stripe.StripeClient;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
+import com.stripe.model.Invoice;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
@@ -113,22 +114,36 @@ public class StripePaymentGateway implements PaymentGateway {
                             .customerId(extractCustomerId(event))
                             .metadata(extractSessionMetadata(event))
                             .paymentIntentId(extractPaymentIntent(event))
+                            .subscriptionId(extractSubscriptionId(event))
                             .build());
 
                 case "payment_intent.succeeded" ->
                         Optional.of(PaymentResult.builder()
-                                .paymentStatus(PaymentStatus.SUCCEEDED)
+                                .paymentStatus(PaymentStatus.FINE_SUCCEEDED)
                                 .paymentIntentId(extractPaymentIntent(event))
+                                .paidAt(extractCreationPayment(event))
+                                .build());
+
+                case "invoice.paid" ->
+                        Optional.of(PaymentResult.builder()
+                                .paymentStatus(PaymentStatus.SUBSCRIPTION_SUCCEEDED)
                                 .customerId(extractCustomerId(event))
+                                .subscriptionId(extractSubscriptionId(event))
                                 .paidAt(extractCreationPayment(event))
                                 .build());
 
                 case "payment_intent.payment_failed" ->
                         Optional.of(PaymentResult.builder()
-                                .paymentStatus(PaymentStatus.FAILED)
-                                .customerId(extractCustomerId(event))
+                                .paymentStatus(PaymentStatus.FINE_FAILED)
                                 .paidAt(extractCreationPayment(event))
                                 .paymentIntentId(extractPaymentIntent(event))
+                                .build());
+
+                case "invoice.payment_failed" ->
+                        Optional.of(PaymentResult.builder()
+                                .paymentStatus(PaymentStatus.SUBSCRIPTION_FAILED)
+                                .customerId(extractCustomerId(event))
+                                .paidAt(extractCreationPayment(event))
                                 .build());
 
                 default ->
@@ -163,8 +178,17 @@ public class StripePaymentGateway implements PaymentGateway {
             Session session = deserializeStripeObject(event, Session.class);
             return session.getCustomer();
         }
-            PaymentIntent intent = deserializeStripeObject(event, PaymentIntent.class);
-            return intent.getCustomer();
+            Invoice invoice = deserializeStripeObject(event, Invoice.class);
+            return invoice.getCustomer();
+    }
+
+    private String extractSubscriptionId(Event event) {
+        if (event.getType().equals("checkout.session.completed")){
+            Session session = deserializeStripeObject(event, Session.class);
+            return session.getSubscription();
+        }
+         Invoice invoice = deserializeStripeObject(event, Invoice.class);
+        return invoice.getParent().getSubscriptionDetails().getSubscription();
     }
 
     private String extractPaymentIntent(Event event) {
@@ -177,9 +201,14 @@ public class StripePaymentGateway implements PaymentGateway {
     }
 
     private LocalDateTime extractCreationPayment(Event event) {
-        PaymentIntent paymentIntent = deserializeStripeObject(event,  PaymentIntent.class);
-        long unixSeconds = paymentIntent.getCreated();
-
+        long unixSeconds;
+        if (event.getType().equals("payment_intent.succeeded")){
+            PaymentIntent paymentIntent = deserializeStripeObject(event,  PaymentIntent.class);
+            unixSeconds = paymentIntent.getCreated();
+            return Instant.ofEpochSecond(unixSeconds).atZone(ZoneOffset.UTC).toLocalDateTime();
+        }
+        Invoice invoice =  deserializeStripeObject(event, Invoice.class);
+        unixSeconds = invoice.getCreated();
         return Instant.ofEpochSecond(unixSeconds).atZone(ZoneOffset.UTC).toLocalDateTime();
     }
 
