@@ -122,6 +122,7 @@ public class StripePaymentGateway implements PaymentGateway {
                                 .paymentStatus(PaymentStatus.FINE_SUCCEEDED)
                                 .paymentIntentId(extractPaymentIntent(event))
                                 .paidAt(extractCreationPayment(event))
+                                .customerId(extractCustomerId(event))
                                 .build());
 
                 case "invoice.paid" ->
@@ -130,12 +131,14 @@ public class StripePaymentGateway implements PaymentGateway {
                                 .customerId(extractCustomerId(event))
                                 .subscriptionId(extractSubscriptionId(event))
                                 .paidAt(extractCreationPayment(event))
+                                .subscriptionDates(extractSubscriptionDates(event))
                                 .build());
 
                 case "payment_intent.payment_failed" ->
                         Optional.of(PaymentResult.builder()
                                 .paymentStatus(PaymentStatus.FINE_FAILED)
                                 .paidAt(extractCreationPayment(event))
+                                .customerId(extractCustomerId(event))
                                 .paymentIntentId(extractPaymentIntent(event))
                                 .build());
 
@@ -172,14 +175,19 @@ public class StripePaymentGateway implements PaymentGateway {
             );
     }
 
-    //in one-time payments customerId = null
+    //in one-time payments customerId = null, in subscriptions customerId != null
     private String extractCustomerId(Event event){
         if (event.getType().equals("checkout.session.completed")){
             Session session = deserializeStripeObject(event, Session.class);
             return session.getCustomer();
-        }
+        } else if (event.getType().equals("invoice.paid") ||  event.getType().equals("invoice.payment_failed")){
             Invoice invoice = deserializeStripeObject(event, Invoice.class);
             return invoice.getCustomer();
+        } else {
+            PaymentIntent paymentIntent = deserializeStripeObject(event, PaymentIntent.class);
+            return paymentIntent.getCustomer();
+        }
+
     }
 
     private String extractSubscriptionId(Event event) {
@@ -189,6 +197,18 @@ public class StripePaymentGateway implements PaymentGateway {
         }
          Invoice invoice = deserializeStripeObject(event, Invoice.class);
         return invoice.getParent().getSubscriptionDetails().getSubscription();
+    }
+
+    private Map<String, LocalDate> extractSubscriptionDates(Event event) {
+        Invoice session = deserializeStripeObject(event, Invoice.class);
+        return session.getLines().getData()
+                .stream()
+                .map(item -> Map.of(
+                        "startDate", Instant.ofEpochSecond(item.getPeriod()
+                                .getStart()).atZone(ZoneOffset.UTC).toLocalDate(),
+                        "endDate", Instant.ofEpochSecond(item.getPeriod()
+                                .getEnd()).atZone(ZoneOffset.UTC).toLocalDate())).
+                findFirst().orElse(null);
     }
 
     private String extractPaymentIntent(Event event) {
