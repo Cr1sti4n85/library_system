@@ -22,6 +22,7 @@ import com.soracel.library_system.repository.BookLoanRepository;
 import com.soracel.library_system.repository.BookRepository;
 import com.soracel.library_system.repository.projection.BookLoanStatusCount;
 import com.soracel.library_system.service.BookLoanService;
+import com.soracel.library_system.service.FineService;
 import com.soracel.library_system.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +43,7 @@ public class BookLoanServiceImpl implements BookLoanService {
     private final BookLoanRepository bookLoanRepository;
     private final BookRepository  bookRepository;
     private final UserService userService;
+    private final FineService fineService;
     @Value("${overdueBaseAmount}")
     private long overdueBaseAmount;
 
@@ -96,7 +99,15 @@ public class BookLoanServiceImpl implements BookLoanService {
         if (overdueCount > 0) {
             throw new LoanException("Tienes préstamos vencidos que no han sido retornados.");
         }
-        //TODO check for fines when implemented
+
+        Optional<Fine> fine = fineService.findByUserId(user.getId())
+                            .stream()
+                            .filter(f -> f.getStatus() == FineStatus.PENDING)
+                            .findAny();
+
+        if (fine.isPresent()) {
+            throw new LoanException("No puedes solicitar préstamos. Tienes multas pendientes por pagar.");
+        }
 
         //UPDATE AVAILABLE BOOK COPIES AND CREATE LOAN
         book.setAvailableCopies(book.getAvailableCopies() - 1);
