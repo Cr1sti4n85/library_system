@@ -17,8 +17,14 @@ public class ReservationDTO {
     private Long id;
 
     private Long userId;
+    private String username;
+    private String email;
 
     private Long bookId;
+    private String bookTitle;
+    private String bookIsbn;
+    private String bookAuthor;
+    private boolean isBookAvailable;
 
     private ReservationStatus status;
 
@@ -43,4 +49,8 @@ public class ReservationDTO {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    private boolean isExpired;
+    private boolean canBeCancelled;
+    private int hoursUntilExpiry;
 }

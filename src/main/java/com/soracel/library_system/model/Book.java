@@ -50,6 +50,8 @@ public class Book {
 
     private Integer availableCopies;
 
+    private boolean isBookAvailable;
+
     private BigDecimal price;
 
     private String coverImageUrl;
