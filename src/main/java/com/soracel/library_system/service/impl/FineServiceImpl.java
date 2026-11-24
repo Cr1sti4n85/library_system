@@ -65,22 +65,22 @@ public class FineServiceImpl implements FineService {
     @Override
     public List<FineDTO> getUserFines(FineStatus fineStatus, FineType fineType) {
         User currentUser = userService.getCurrentUserEntity();
-        List<Fine> fines = null;
+        List<Fine> fines;
 
         if (fineStatus != null && fineType != null) {
-            fines = fineRepository.findByUserId(currentUser.getId()).stream()
+            fines = findByUserId(currentUser.getId()).stream()
                     .filter(f -> f.getStatus().equals(fineStatus) && f.getFineType().equals(fineType))
                     .toList();
         } else if (fineStatus != null) {
-            fines = fineRepository.findByUserId(currentUser.getId()).stream()
+            fines = findByUserId(currentUser.getId()).stream()
                     .filter(f -> f.getStatus().equals(fineStatus))
                     .toList();
         } else if (fineType != null) {
-            fines = fineRepository.findByUserId(currentUser.getId()).stream()
+            fines = findByUserId(currentUser.getId()).stream()
                     .filter(f -> f.getFineType().equals(fineType))
                     .toList();
         } else {
-            fines = fineRepository.findByUserId(currentUser.getId());
+            fines = findByUserId(currentUser.getId());
         }
         return fines.stream().map(FineMapper::toDTO).toList();
     }
@@ -95,5 +95,10 @@ public class FineServiceImpl implements FineService {
 
         Page<Fine> finePage = fineRepository.findAllWithFilters(userId, fineStatus, fineType, pageable);
         return PaginationUtil.convertToPageResponse(finePage, FineMapper::toDTO);
+    }
+
+    @Override
+    public List<Fine> findByUserId(Long id) {
+        return fineRepository.findByUserId(id);
     }
 }
