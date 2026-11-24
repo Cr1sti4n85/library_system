@@ -48,6 +48,7 @@ public class Reservation {
     private Integer queuePosition;
 
     @Column(nullable = false)
+    @Builder.Default
     private boolean notificationSent = false;
 
     private String notes;
@@ -57,4 +58,14 @@ public class Reservation {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    public boolean hasExpired() {
+        return status == ReservationStatus.AVAILABLE
+                && availableUntil != null
+                && LocalDateTime.now().isAfter(availableUntil);
+    }
+
+    public boolean canBeCancelled() {
+        return status == ReservationStatus.PENDING || status == ReservationStatus.AVAILABLE;
+    }
 }
