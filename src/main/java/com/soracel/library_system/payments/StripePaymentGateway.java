@@ -112,13 +112,13 @@ public class StripePaymentGateway implements PaymentGateway {
                             .paymentStatus(PaymentStatus.COMPLETED)
                             .customerId(extractCustomerId(event))
                             .metadata(extractSessionMetadata(event))
-                            .paymentIntentId(extractPaymentIntentIdFromSession(event))
+                            .paymentIntentId(extractPaymentIntent(event))
                             .build());
 
                 case "payment_intent.succeeded" ->
                         Optional.of(PaymentResult.builder()
                                 .paymentStatus(PaymentStatus.SUCCEEDED)
-                                .paymentIntentId(extractPaymentIntentId(event))
+                                .paymentIntentId(extractPaymentIntent(event))
                                 .customerId(extractCustomerId(event))
                                 .paidAt(extractCreationPayment(event))
                                 .build());
@@ -128,7 +128,7 @@ public class StripePaymentGateway implements PaymentGateway {
                                 .paymentStatus(PaymentStatus.FAILED)
                                 .customerId(extractCustomerId(event))
                                 .paidAt(extractCreationPayment(event))
-                                .paymentIntentId(extractPaymentIntentId(event))
+                                .paymentIntentId(extractPaymentIntent(event))
                                 .build());
 
                 default ->
@@ -142,7 +142,7 @@ public class StripePaymentGateway implements PaymentGateway {
     }
 
     private Map<String, Long> extractSessionMetadata(Event event){
-            Session session = deserializeSession(event);
+            Session session = deserializeStripeObject(event, Session.class);
             if (session.getMetadata().get("fineId") != null){
                 Long fineId = Long.parseLong(session.getMetadata().get("fineId"));
                 return Map.of(
@@ -160,21 +160,20 @@ public class StripePaymentGateway implements PaymentGateway {
     //in one-time payments customerId = null
     private String extractCustomerId(Event event){
         if (event.getType().equals("checkout.session.completed")){
-            Session session = deserializeSession(event);
+            Session session = deserializeStripeObject(event, Session.class);
             return session.getCustomer();
         }
-            PaymentIntent intent = deserializePaymentIntent(event);
+            PaymentIntent intent = deserializeStripeObject(event, PaymentIntent.class);
             return intent.getCustomer();
     }
 
-    private String extractPaymentIntentIdFromSession(Event event) {
-        Session session = deserializeSession(event);
-        return session.getPaymentIntent();
-    }
-
-    private String extractPaymentIntentId(Event event) {
-        PaymentIntent paymentIntent = deserializePaymentIntent(event);
-        return paymentIntent.getId();
+    private String extractPaymentIntent(Event event) {
+        if (event.getType().equals("checkout.session.completed")){
+            Session session = deserializeStripeObject(event, Session.class);
+            return session.getPaymentIntent();
+        }
+        PaymentIntent intent = deserializeStripeObject(event, PaymentIntent.class);
+        return intent.getId();
     }
 
     private LocalDateTime extractCreationPayment(Event event) {
@@ -182,20 +181,6 @@ public class StripePaymentGateway implements PaymentGateway {
         long unixSeconds = paymentIntent.getCreated();
 
         return Instant.ofEpochSecond(unixSeconds).atZone(ZoneOffset.UTC).toLocalDateTime();
-    }
-
-    private Session deserializeSession(Event event) {
-        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
-                .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
-
-        return (Session) stripeObject;
-    }
-
-    private PaymentIntent deserializePaymentIntent(Event event) {
-        StripeObject stripeObject = event.getDataObjectDeserializer().getObject()
-                .orElseThrow(() -> new PaymentException("Error al deserializar el objeto de Stripe"));
-
-        return (PaymentIntent) stripeObject;
     }
 
     private <T extends StripeObject> T deserializeStripeObject(Event event, Class<T> clazz) {
