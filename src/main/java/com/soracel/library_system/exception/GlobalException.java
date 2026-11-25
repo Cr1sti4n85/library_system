@@ -92,6 +92,13 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(ForbiddenUserException.class)
+    public ResponseEntity<ApiResponse> handleForbiddenException(ForbiddenUserException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(

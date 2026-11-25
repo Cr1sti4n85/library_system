@@ -1,5 +1,6 @@
 package com.soracel.library_system.repository;
 
+import com.soracel.library_system.domain.ReservationStatus;
 import com.soracel.library_system.model.Reservation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -47,7 +48,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     THEN true ELSE false END
     FROM Reservation r
     WHERE r.user.id = :userId
-    AND r.book.id = : bookId
+    AND r.book.id = :bookId
     AND (r.status = "PENDING" OR r.status = "AVAILABLE")
     """)
     boolean hasActiveReservation(@Param("userId") Long userId, @Param("bookId") Long bookId);
@@ -66,4 +67,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     AND (r.status = "PENDING" OR r.status = "AVAILABLE")
     """)
     Optional<Reservation> findActiveReservationByUserAndBook(@Param("userId") Long userId, @Param("bookId") Long bookId);
+
+    List<Reservation> findByBookIdAndStatusOrderByQueuePositionAsc(
+            Long bookId,
+            ReservationStatus status
+    );
 }
