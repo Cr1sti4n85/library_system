@@ -16,7 +16,7 @@ public class ReservationSearchRequest {
 
     private ReservationStatus status;
 
-    private boolean activeOnly;
+    private Boolean activeOnly;
 
     private int page;
 
