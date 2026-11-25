@@ -54,6 +54,10 @@ public class SubscriptionPlan {
     @Positive(message = "Cantidad de días debe ser positiva")
     private Integer maxDaysPerBook;
 
+    @Column(nullable = false)
+    @Positive(message = "Cantidad de reservas debe ser positiva")
+    private Integer maxReservationLimit;
+
     @Builder.Default
     private Integer displayOrder = 0;
 

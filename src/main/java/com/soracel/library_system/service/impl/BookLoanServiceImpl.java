@@ -317,4 +317,9 @@ public class BookLoanServiceImpl implements BookLoanService {
         return updateCount;
     }
 
+    @Override
+    public boolean checkLoanExistsForUser(Long userId, Long bookId){
+        return bookLoanRepository.hasActiveCheckout(userId, bookId);
+    }
+
 }

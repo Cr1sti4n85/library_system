@@ -28,4 +28,6 @@ public interface BookLoanService {
 
     Integer updateOverdueBookLoan();
 
+    boolean checkLoanExistsForUser(Long userId, Long bookId);
+
 }

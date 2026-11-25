@@ -8,6 +8,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -35,6 +37,9 @@ public class Book {
     @ManyToOne(fetch =  FetchType.LAZY)
     private Genre genre;
 
+    @OneToMany(mappedBy = "book", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Reservation> reservations = new ArrayList<>();
+
     private String publisher;
 
     private LocalDate publishDate;
@@ -49,6 +54,8 @@ public class Book {
     private Integer totalCopies;
 
     private Integer availableCopies;
+
+    private boolean isBookAvailable;
 
     private BigDecimal price;
 
@@ -65,6 +72,15 @@ public class Book {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    public void addReservation(Reservation reservation) {
+        reservations.add(reservation);
+    }
+
+    public void removeReservation(Reservation reservation) {
+        this.reservations.remove(reservation);
+        reservation.setBook(null);
+    }
 
 }
 

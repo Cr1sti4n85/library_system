@@ -85,6 +85,20 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(ReservationException.class)
+    public ResponseEntity<ApiResponse> handleReservationException(ReservationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
+    @ExceptionHandler(ForbiddenUserException.class)
+    public ResponseEntity<ApiResponse> handleForbiddenException(ForbiddenUserException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
