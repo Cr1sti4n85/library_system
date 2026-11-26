@@ -106,6 +106,13 @@ public class GlobalException {
         );
     }
 
+    @ExceptionHandler(ReviewException.class)
+    public ResponseEntity<ApiResponse> handleReviewException(ReviewException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse(ex.getMessage(), false)
+        );
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(

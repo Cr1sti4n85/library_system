@@ -64,4 +64,6 @@ public interface BookLoanRepository extends JpaRepository<BookLoan, Long> {
         WHERE bl.checkoutDate BETWEEN :startDate AND :endDate
     """)
     Page<BookLoan> findBookByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate, Pageable pageable);
+
+    List<BookLoan> findByUserIdAndBookId(Long userId, Long bookId);
 }

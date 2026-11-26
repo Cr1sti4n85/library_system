@@ -119,12 +119,13 @@ public class PaymentServiceImpl implements PaymentService {
                 if (SubscriptionStatus.PAYMENT_FAILED == subscription.getStatus()){
                     subscription.setStatus(SubscriptionStatus.ACTIVE);
                     subscription.setIsActive(true);
-                    subscription = subscriptionRepository.save(subscription);
+
                 }
                 if (SubscriptionStatus.ACTIVE == subscription.getStatus()){
                     subscription.setStartDate(paymentResult.getSubscriptionDates().get("startDate"));
                     subscription.setEndDate(paymentResult.getSubscriptionDates().get("endDate"));
                 }
+                subscription = subscriptionRepository.save(subscription);
 
                 createPayment(
                         user,
