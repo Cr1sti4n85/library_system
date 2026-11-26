@@ -15,32 +15,15 @@ import java.util.Optional;
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
     @Query("""
-    SELECT r FROM Reservation r
-    WHERE r.book.id = :bookId
-    AND r.status = "PENDING"
-    ORDER BY r.reservedAt ASC
-    """)
-    List<Reservation> findPendingReservationsByBook(@Param("bookId") Long bookId);
-
-    @Query("""
-    SELECT r FROM Reservation r
-    WHERE r.book.id = :bookId
-    AND r.status = "PENDING"
-    ORDER BY r.reservedAt ASC
-    LIMIT 1
-    """)
-    Optional<Reservation> findNextPendingReservation(@Param("bookId") Long bookId);
-
-    @Query("""
     SELECT COUNT(r) FROM Reservation r
     WHERE r.book.id = :bookId
-    AND r.status = "PENDING"
+    AND r.status = 'PENDING'
     """)
     int countPendingReservationsByBook(@Param("bookId") Long bookId);
 
     @Query("""
     SELECT r FROM Reservation r
-    WHERE r.status = "AVAILABLE"
+    WHERE r.status = 'AVAILABLE'
     AND r.availableUntil < :currentDateTime
     """)
     List<Reservation> findExpiredReservations(@Param("currentDateTime") LocalDateTime currentDateTime);
@@ -51,24 +34,17 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     FROM Reservation r
     WHERE r.user.id = :userId
     AND r.book.id = :bookId
-    AND (r.status = "PENDING" OR r.status = "AVAILABLE")
+    AND (r.status = 'PENDING' OR r.status = 'AVAILABLE')
     """)
     boolean hasActiveReservation(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
     @Query("""
     SELECT COUNT(r) FROM Reservation r
     WHERE r.user.id = :userId
-    AND (r.status = "PENDING" OR r.status = "AVAILABLE")
+    AND (r.status = 'PENDING' OR r.status = 'AVAILABLE')
     """)
     int countActiveReservationsByUser(@Param("userId") Long userId);
 
-    @Query("""
-    SELECT r FROM Reservation r
-    WHERE r.user.id = :userId
-    AND r.book.id = :bookId
-    AND (r.status = "PENDING" OR r.status = "AVAILABLE")
-    """)
-    Optional<Reservation> findActiveReservationByUserAndBook(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
     List<Reservation> findByBookIdAndStatusOrderByQueuePositionAsc(
             Long bookId,
@@ -80,7 +56,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     WHERE (:userId IS NULL OR r.user.id = :userId)
     AND (:bookId IS NULL OR r.book.id = :bookId)
     AND (:status IS NULL OR r.status = :status)
-    AND (:activeOnly = false OR (r.status = "PENDING" OR r.status = "AVAILABLE"))
+    AND (:activeOnly = false OR (r.status = 'PENDING' OR r.status = 'AVAILABLE'))
     """)
     Page<Reservation> searchReservationWithFilters(
             @Param("userId") Long userId,

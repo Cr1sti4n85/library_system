@@ -44,7 +44,6 @@ public class Reservation {
 
     private LocalDateTime cancelledAt;
 
-    @Column(nullable = false)
     private Integer queuePosition;
 
     @Column(nullable = false)

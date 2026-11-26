@@ -1,5 +1,6 @@
 package com.soracel.library_system.service;
 
+import com.soracel.library_system.domain.ReservationStatus;
 import com.soracel.library_system.payload.dto.ReservationDTO;
 import com.soracel.library_system.payload.request.ReservationRequest;
 import com.soracel.library_system.payload.request.ReservationSearchRequest;
@@ -13,10 +14,18 @@ public interface ReservationService {
 
     ReservationDTO cancelReservation(Long reservationId);
 
+    void expireReservation();
+
+    void makeReservationAvailable();
+
     ReservationDTO fulfillReservation(Long reservationId);
 
-    PageResponse<ReservationDTO> getMyReservations(ReservationSearchRequest request);
+    PageResponse<ReservationDTO> getMyReservations(ReservationStatus status,
+                                                   Boolean activeOnly, int page, int size,
+                                                   String sortBy, String sortDirection);
 
-    PageResponse<ReservationDTO> searchReservations(ReservationSearchRequest request);
+    PageResponse<ReservationDTO> searchReservations(Long userId, ReservationStatus status,
+                                                    Boolean activeOnly, int page, int size,
+                                                    Long bookId, String sortBy, String sortDirection);
 
 }
