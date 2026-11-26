@@ -9,7 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -39,6 +41,9 @@ public class Book {
 
     @OneToMany(mappedBy = "book", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<Reservation> reservations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "book", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private Set<WishList> wishLists = new HashSet<>();
 
     private String publisher;
 
