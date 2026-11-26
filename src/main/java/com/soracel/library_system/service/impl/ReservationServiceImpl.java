@@ -12,7 +12,6 @@ import com.soracel.library_system.model.User;
 import com.soracel.library_system.payload.dto.ReservationDTO;
 import com.soracel.library_system.payload.request.CheckoutRequest;
 import com.soracel.library_system.payload.request.ReservationRequest;
-import com.soracel.library_system.payload.request.ReservationSearchRequest;
 import com.soracel.library_system.payload.response.PageResponse;
 import com.soracel.library_system.repository.BookRepository;
 import com.soracel.library_system.repository.ReservationRepository;
@@ -68,8 +67,6 @@ public class ReservationServiceImpl implements ReservationService {
         Book existingBook = bookRepository.findById(request.getBookId())
                 .orElseThrow(() -> new BookException("El libro no está disponible"));
 
-        System.out.println("book id: " + request.getBookId());
-
         if (reservationRepository.hasActiveReservation(userId, request.getBookId())){
             throw new ReservationException("Ya tienes reservado este libro");
         }
@@ -121,7 +118,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         if (!reservation.canBeCancelled()){
-            throw new ReservationException("La reservación no puede cancelarse.");
+            throw new ReservationException("La reservación expiró, ya se canceló o ya obtuviste el préstamo asociado.");
         }
 
         //get book to reorganize its reservation queue
@@ -135,6 +132,60 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation  savedReservation = reservationRepository.save(reservation);
 
         return ReservationMapper.toDTO(savedReservation);
+    }
+
+    @Override
+    public void expireReservation() {
+
+        List<Reservation> reservations = reservationRepository.findExpiredReservations(LocalDateTime.now());
+
+        if (!reservations.isEmpty()){
+            for(Reservation reservation : reservations){
+
+                    reservation.setStatus(ReservationStatus.EXPIRED);
+                    reservation.setQueuePosition(null);
+                    reorganizeReservationQueue(reservation.getBook().getId());
+                    reservationRepository.save(reservation);
+            }
+
+        }
+    }
+
+    @Override
+    public void makeReservationAvailable() {
+        List<Book> books = bookRepository.hasAvailableBookCopies();
+        if (!books.isEmpty()){
+            int counter= 0;
+            for(Book book : books){
+                List<Reservation> reservationList = book.getReservations();
+                if (reservationList.size() > book.getAvailableCopies()){
+                    for(Reservation reservation : reservationList){
+                        updateAvailability(reservation);
+                        reorganizeReservationQueue(book.getId());
+                        counter++;
+                        if (counter == book.getAvailableCopies()) break;
+                    }
+
+                } else {
+                    for(Reservation reservation : reservationList){
+                        updateAvailability(reservation);
+                        reorganizeReservationQueue(book.getId());
+                    }
+
+                }
+            }
+            //TODO enviar notificacion el cliente por email y el link para realizar el préstamo
+
+        }
+
+    }
+
+    private void updateAvailability(Reservation reservation) {
+        reservation.setStatus(ReservationStatus.AVAILABLE);
+        reservation.setAvailableAt(LocalDateTime.now());
+        reservation.setQueuePosition(null);
+        reservation.setAvailableUntil(LocalDateTime.now().plusHours(1));
+        reservationRepository.save(reservation);
     }
 
     @Override
@@ -152,6 +203,8 @@ public class ReservationServiceImpl implements ReservationService {
 
         Reservation savedReservation = reservationRepository.save(reservation);
 
+        reorganizeReservationQueue(savedReservation.getBook().getId());
+
         //CREATE CHECKOUT
         CheckoutRequest checkoutRequest = new CheckoutRequest();
         checkoutRequest.setBookId(reservation.getBook().getId());
@@ -162,26 +215,25 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public PageResponse<ReservationDTO> getMyReservations(ReservationSearchRequest request) {
+    public PageResponse<ReservationDTO> getMyReservations(ReservationStatus status, Boolean activeOnly,
+                                                          int page, int size, String sortBy, String sortDirection) {
         User user = userService.getCurrentUserEntity();
-        request.setUserId(user.getId());
-        return searchReservations(request);
+        return searchReservations(user.getId(), status, activeOnly, page, size, null, sortBy, sortDirection);
     }
 
     @Override
-    public PageResponse<ReservationDTO> searchReservations(ReservationSearchRequest request) {
+    public PageResponse<ReservationDTO> searchReservations(Long userId, ReservationStatus status,
+                                                           Boolean activeOnly, int page, int size,
+                                                           Long bookId, String sortBy, String sortDirection) {
 
-        Pageable pageable = PaginationUtil.createPageable(request.getPage(),
-                                                          request.getSize(),
-                                                          request.getSortBy(),
-                                                          request.getSortDirection());
+        Pageable pageable = PaginationUtil.createPageable(page, size, sortBy, sortDirection);
 
         Page<Reservation> reservationPage = reservationRepository
                                             .searchReservationWithFilters(
-                                                    request.getUserId(),
-                                                    request.getBookId(),
-                                                    request.getStatus(),
-                                                    request.getActiveOnly() != null && request.getActiveOnly(),
+                                                    userId,
+                                                    bookId,
+                                                    status,
+                                                    activeOnly != null && activeOnly,
                                                     pageable);
         return PaginationUtil.convertToPageResponse(reservationPage, ReservationMapper::toDTO);
     }

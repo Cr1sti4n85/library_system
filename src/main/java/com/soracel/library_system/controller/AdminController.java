@@ -2,11 +2,9 @@ package com.soracel.library_system.controller;
 
 import com.soracel.library_system.domain.FineStatus;
 import com.soracel.library_system.domain.FineType;
+import com.soracel.library_system.domain.ReservationStatus;
 import com.soracel.library_system.payload.dto.*;
-import com.soracel.library_system.payload.request.BookLoanSearchRequest;
-import com.soracel.library_system.payload.request.CheckinRequest;
-import com.soracel.library_system.payload.request.CheckoutRequest;
-import com.soracel.library_system.payload.request.WaiveFineRequest;
+import com.soracel.library_system.payload.request.*;
 import com.soracel.library_system.payload.response.ApiResponse;
 import com.soracel.library_system.payload.response.PageResponse;
 import com.soracel.library_system.payments.PaymentService;
@@ -37,6 +35,7 @@ public class AdminController {
     private final PaymentService paymentService;
     private final BookLoanService bookLoanService;
     private final FineService fineService;
+    private final ReservationService reservationService;
 
     //USERS
     @GetMapping("/users")
@@ -209,5 +208,37 @@ public class AdminController {
        PageResponse<FineDTO> fines = fineService.getAllFines(status, type, userId, page, size);
        return ResponseEntity.status(HttpStatus.OK).body(fines);
     }
+
+    //RESERVATIONS
+    @PostMapping("/reservations/users/{userId}")
+    public ResponseEntity<ReservationDTO>  createReservation(
+            @Valid @RequestBody ReservationRequest request,
+            Long userId) {
+
+        ReservationDTO dto = reservationService.createReservationForUser(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(dto);
+    }
+
+    @GetMapping("/reservations")
+    public ResponseEntity<PageResponse<ReservationDTO>> searchReservations(
+                                                                @RequestParam(required = false) ReservationStatus status,
+                                                                @RequestParam(required = false) Boolean activeOnly,
+                                                                @RequestParam(required = false) Long userId,
+                                                                @RequestParam(required = false) Long bookId,
+                                                                @RequestParam(defaultValue = "0") int page,
+                                                                @RequestParam(defaultValue = "20") int size,
+                                                                @RequestParam(defaultValue = "reservedAt") String sortBy,
+                                                                @RequestParam(defaultValue = "DESC") String sortDirection
+
+    ) {
+
+        PageResponse<ReservationDTO> pageResponse = reservationService.searchReservations(
+                                                                                            userId, status,
+                                                                                            activeOnly, page,
+                                                                                            size, bookId,
+                                                                                            sortBy, sortDirection);
+        return ResponseEntity.status(HttpStatus.OK).body(pageResponse);
+    }
+
 
 }

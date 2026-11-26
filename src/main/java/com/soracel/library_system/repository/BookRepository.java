@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
@@ -36,4 +37,13 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     @Query("SELECT count(b) FROM Book b WHERE b.availableCopies>0 AND b.active=true")
     long countByAvailableBooks();
+
+    @Query("""
+    SELECT b FROM Reservation r
+    JOIN r.book b
+    WHERE b.availableCopies > 0
+    AND r.status = 'PENDING'
+    ORDER BY r.createdAt ASC
+    """)
+    List<Book> hasAvailableBookCopies();
 }
