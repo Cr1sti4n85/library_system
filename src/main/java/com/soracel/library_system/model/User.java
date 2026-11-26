@@ -64,6 +64,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
     private List<Reservation> reservations = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
+    private Set<WishList> wishLists = new HashSet<>();
+
     @CreationTimestamp
     private LocalDateTime createdAt;
     @UpdateTimestamp
