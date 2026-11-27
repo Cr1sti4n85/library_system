@@ -12,9 +12,10 @@ public class UpdateReviewRequest {
 
     @Min(value = 1, message = "El valor mínimo del rating debe ser 1")
     @Max(value = 5, message = "El valor máximo del rating debe ser 5")
+    @NotNull(message = "El rating es obligatorio")
     private Integer rating;
 
-    @NotBlank
+    @NotBlank(message = "El mensaje no puede estar vacío")
     @Size(min = 5, max = 250, message = "El mensaje debe contener entre 5 y 250 caracteres")
     @NotNull(message = "El mensaje es obligatorio")
     private String reviewText;
