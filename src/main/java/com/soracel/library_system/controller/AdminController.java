@@ -213,7 +213,7 @@ public class AdminController {
     @PostMapping("/reservations/users/{userId}")
     public ResponseEntity<ReservationDTO>  createReservation(
             @Valid @RequestBody ReservationRequest request,
-            Long userId) {
+            @PathVariable Long userId) {
 
         ReservationDTO dto = reservationService.createReservationForUser(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
