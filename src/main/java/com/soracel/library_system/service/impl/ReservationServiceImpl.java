@@ -157,7 +157,10 @@ public class ReservationServiceImpl implements ReservationService {
         if (!books.isEmpty()){
             int counter= 0;
             for(Book book : books){
-                List<Reservation> reservationList = book.getReservations();
+                List<Reservation> reservationList = book.getReservations()
+                        .stream()
+                        .filter(r -> r.getStatus() == ReservationStatus.PENDING)
+                        .toList();
                 if (reservationList.size() > book.getAvailableCopies()){
                     for(Reservation reservation : reservationList){
                         updateAvailability(reservation);
@@ -188,7 +191,7 @@ public class ReservationServiceImpl implements ReservationService {
         reservationRepository.save(reservation);
     }
 
-    @Override
+    @Transactional
     public ReservationDTO fulfillReservation(Long reservationId) {
 
         Reservation reservation = reservationRepository.findById(reservationId)
@@ -200,6 +203,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         reservation.setStatus(ReservationStatus.FULFILLED);
         reservation.setFulfilledAt(LocalDateTime.now());
+        reservation.setQueuePosition(null);
 
         Reservation savedReservation = reservationRepository.save(reservation);
 
@@ -243,10 +247,13 @@ public class ReservationServiceImpl implements ReservationService {
                                         .findByBookIdAndStatusOrderByQueuePositionAsc(
                                                         bookId,
                                                         ReservationStatus.PENDING);
-        for (int i = 0; i < reservations.size(); i++) {
-            Reservation reservation = reservations.get(i);
-            reservation.setQueuePosition(i + 1);
+        if (!reservations.isEmpty()){
+            for (int i = 0; i < reservations.size(); i++) {
+                Reservation reservation = reservations.get(i);
+                reservation.setQueuePosition(i + 1);
+            }
+            reservationRepository.saveAll(reservations);
         }
-        reservationRepository.saveAll(reservations);
+
     }
 }
