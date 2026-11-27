@@ -45,6 +45,9 @@ public class Book {
     @OneToMany(mappedBy = "book", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private Set<WishList> wishLists = new HashSet<>();
 
+    @OneToMany(mappedBy = "book", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Review> reviews = new ArrayList<>();
+
     private String publisher;
 
     private LocalDate publishDate;
