@@ -55,8 +55,7 @@ public class UserServiceImpl implements UserService {
     public User findByCustomerId(String customerId) {
         return userRepository
                 .findByCustomerId(customerId)
-                .orElseThrow(() -> new NotFoundException("Usuario no existe"));
-
+                .orElse(null);
     }
 
 

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,6 +47,10 @@ public class StripePaymentGateway implements PaymentGateway {
                 .setSuccessUrl(websiteUrl + "/success?session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(websiteUrl + "/cancel?session_id={CHECKOUT_SESSION_ID}")
                 .setMode(SessionCreateParams.Mode.SUBSCRIPTION)
+                .setSubscriptionData(SessionCreateParams.SubscriptionData.builder()
+                        .putMetadata("subscriptionId", String.valueOf(subscriptionId))
+                        .putMetadata("userId", String.valueOf(userId))
+                        .build())
                 .putMetadata("subscriptionId", String.valueOf(subscriptionId))
                 .putMetadata("userId", String.valueOf(userId))
                 .addLineItem(new SessionCreateParams.LineItem.Builder()
@@ -80,6 +85,10 @@ public class StripePaymentGateway implements PaymentGateway {
                 .setSuccessUrl(websiteUrl + "/success?session_id={CHECKOUT_SESSION_ID}")
                 .setCancelUrl(websiteUrl + "/cancel?session_id={CHECKOUT_SESSION_ID}")
                 .setMode(SessionCreateParams.Mode.PAYMENT)
+                .setPaymentIntentData(SessionCreateParams.PaymentIntentData
+                        .builder()
+                        .putMetadata("fineId", String.valueOf(fine.getId()))
+                        .build())
                 .putMetadata("fineId", String.valueOf(fine.getId()))
                 .setSubmitType(SessionCreateParams.SubmitType.AUTO)
                 .setIntegrationIdentifier("hosted_web_0003")
@@ -112,15 +121,16 @@ public class StripePaymentGateway implements PaymentGateway {
                     Optional.of(PaymentResult.builder()
                             .paymentStatus(PaymentStatus.COMPLETED)
                             .customerId(extractCustomerId(event))
-                            .metadata(extractSessionMetadata(event))
+                            .metadata(extractMetadata(event))
                             .paymentIntentId(extractPaymentIntent(event))
                             .subscriptionId(extractSubscriptionId(event))
                             .build());
 
                 case "payment_intent.succeeded" ->
                         Optional.of(PaymentResult.builder()
-                                .paymentStatus(PaymentStatus.FINE_SUCCEEDED)
+                                .paymentStatus(PaymentStatus.SUCCEEDED)
                                 .paymentIntentId(extractPaymentIntent(event))
+                                .metadata(extractMetadata(event))
                                 .paidAt(extractCreationPayment(event))
                                 .customerId(extractCustomerId(event))
                                 .build());
@@ -129,6 +139,8 @@ public class StripePaymentGateway implements PaymentGateway {
                         Optional.of(PaymentResult.builder()
                                 .paymentStatus(PaymentStatus.SUBSCRIPTION_SUCCEEDED)
                                 .customerId(extractCustomerId(event))
+                                .invoiceId(extractInvoiceId(event))
+                                .metadata(extractMetadata(event))
                                 .subscriptionId(extractSubscriptionId(event))
                                 .paidAt(extractCreationPayment(event))
                                 .subscriptionDates(extractSubscriptionDates(event))
@@ -136,8 +148,9 @@ public class StripePaymentGateway implements PaymentGateway {
 
                 case "payment_intent.payment_failed" ->
                         Optional.of(PaymentResult.builder()
-                                .paymentStatus(PaymentStatus.FINE_FAILED)
+                                .paymentStatus(PaymentStatus.FAILED)
                                 .paidAt(extractCreationPayment(event))
+                                .metadata(extractMetadata(event))
                                 .customerId(extractCustomerId(event))
                                 .paymentIntentId(extractPaymentIntent(event))
                                 .build());
@@ -146,8 +159,12 @@ public class StripePaymentGateway implements PaymentGateway {
                         Optional.of(PaymentResult.builder()
                                 .paymentStatus(PaymentStatus.SUBSCRIPTION_FAILED)
                                 .customerId(extractCustomerId(event))
+                                .invoiceId(extractInvoiceId(event))
+                                .metadata(extractMetadata(event))
                                 .paidAt(extractCreationPayment(event))
                                 .build());
+
+                //TODO: add case for customer.subscription.updated when client cancels subscription
 
                 default ->
                     Optional.empty();
@@ -159,20 +176,39 @@ public class StripePaymentGateway implements PaymentGateway {
         }
     }
 
-    private Map<String, Long> extractSessionMetadata(Event event){
+    private Map<String, Long> extractMetadata(Event event){
+        Map<String, Long> metadata = new HashMap<>();
+        if (event.getType().equals("checkout.session.completed")){
             Session session = deserializeStripeObject(event, Session.class);
             if (session.getMetadata().get("fineId") != null){
                 Long fineId = Long.parseLong(session.getMetadata().get("fineId"));
-                return Map.of(
-                        "fineId", fineId
-                );
+                metadata.put("fineId", fineId);
+            } else {
+                Long userId = Long.parseLong(session.getMetadata().get("userId"));
+                Long subscriptionId = Long.parseLong(session.getMetadata().get("subscriptionId"));
+                metadata.put("subscriptionId", subscriptionId);
+                metadata.put("userId", userId);
             }
-            Long userId = Long.parseLong(session.getMetadata().get("userId"));
-            Long subscriptionId = Long.parseLong(session.getMetadata().get("subscriptionId"));
-            return Map.of(
-                "userId", userId,
-                "subscriptionId", subscriptionId
-            );
+
+        } else if (event.getType().startsWith("payment_intent")) {
+            PaymentIntent intent = deserializeStripeObject(event, PaymentIntent.class);
+            if (intent.getMetadata().get("fineId") != null){
+                Long fineId =  Long.parseLong(intent.getMetadata().get("fineId"));
+                metadata.put("fineId", fineId);
+            }
+
+        } else {
+            Invoice invoice = deserializeStripeObject(event, Invoice.class);
+            Long userId = Long.parseLong(invoice.getParent()
+                        .getSubscriptionDetails()
+                        .getMetadata().get("userId"));
+            Long subscriptionId = Long.parseLong(invoice.getParent()
+                                        .getSubscriptionDetails()
+                                        .getMetadata().get("subscriptionId"));
+            metadata.put("subscriptionId", subscriptionId);
+            metadata.put("userId", userId);
+        }
+        return metadata;
     }
 
     //in one-time payments customerId = null, in subscriptions customerId != null
@@ -220,9 +256,14 @@ public class StripePaymentGateway implements PaymentGateway {
         return intent.getId();
     }
 
+    private String extractInvoiceId(Event event) {
+        Invoice invoice =  deserializeStripeObject(event, Invoice.class);
+        return invoice.getId();
+    }
+
     private LocalDateTime extractCreationPayment(Event event) {
         long unixSeconds;
-        if (event.getType().equals("payment_intent.succeeded")){
+        if (event.getType().startsWith("payment_intent")){
             PaymentIntent paymentIntent = deserializeStripeObject(event,  PaymentIntent.class);
             unixSeconds = paymentIntent.getCreated();
             return Instant.ofEpochSecond(unixSeconds).atZone(ZoneOffset.UTC).toLocalDateTime();

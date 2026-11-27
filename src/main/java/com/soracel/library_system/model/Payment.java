@@ -49,7 +49,7 @@ public class Payment {
     @Builder.Default
     private String currency = "MXN";
 
-    private String stripeCheckoutSessionId;
+    private String invoiceId;
 
     private String customerId;
 

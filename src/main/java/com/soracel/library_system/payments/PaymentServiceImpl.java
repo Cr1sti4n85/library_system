@@ -35,7 +35,7 @@ public class PaymentServiceImpl implements PaymentService {
     public void createPayment(User user, Subscription subscription,
                               Fine fine, PaymentType paymentType,
                               PaymentProvider provider, String customerId,
-                              BigDecimal amount, PaymentStatus status,
+                              String invoiceId, BigDecimal amount, PaymentStatus status,
                               LocalDateTime paidAt
 
     ) {
@@ -52,7 +52,8 @@ public class PaymentServiceImpl implements PaymentService {
         if (subscription == null) {
             builder.fine(fine);
         } else {
-            builder.subscription(subscription);
+            builder.subscription(subscription)
+                    .invoiceId(invoiceId);
         }
 
         paymentRepository.save(builder.build());
@@ -89,59 +90,10 @@ public class PaymentServiceImpl implements PaymentService {
 
             }
 
-            if (PaymentStatus.FINE_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
+            if (PaymentStatus.SUCCEEDED ==  paymentResult.getPaymentStatus()) {
                 //in subscriptions it's not null
                 if (paymentResult.getCustomerId() == null){
-                    Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
-                            .orElseThrow(() -> new NotFoundException("Multa no encontrada por payment id"));
-
-                    createPayment(
-                            fine.getUser(),
-                            null,
-                            fine,
-                            PaymentType.FINE,
-                            PaymentProvider.STRIPE,
-                            null,
-                            fine.getAmount(),
-                            PaymentStatus.FINE_SUCCEEDED,
-                            paymentResult.getPaidAt()
-                    );
-
-                }
-
-            } if (PaymentStatus.SUBSCRIPTION_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
-                User user = userService.findByCustomerId(paymentResult.getCustomerId());
-
-                Subscription subscription = subscriptionService
-                                                .findBySubscriptionId(paymentResult.getSubscriptionId());
-
-
-                if (SubscriptionStatus.PAYMENT_FAILED == subscription.getStatus()){
-                    subscription.setStatus(SubscriptionStatus.ACTIVE);
-                    subscription.setIsActive(true);
-
-                }
-                if (SubscriptionStatus.ACTIVE == subscription.getStatus()){
-                    subscription.setStartDate(paymentResult.getSubscriptionDates().get("startDate"));
-                    subscription.setEndDate(paymentResult.getSubscriptionDates().get("endDate"));
-                }
-                subscription = subscriptionRepository.save(subscription);
-
-                createPayment(
-                        user,
-                        subscription,
-                        null,
-                        PaymentType.SUBSCRIPTION,
-                        PaymentProvider.STRIPE,
-                        paymentResult.getCustomerId(),
-                        subscription.getPrice(),
-                        PaymentStatus.SUBSCRIPTION_SUCCEEDED,
-                        paymentResult.getPaidAt()
-                );
-            }
-            if (PaymentStatus.FINE_FAILED ==  paymentResult.getPaymentStatus()) {
-                if (paymentResult.getCustomerId() == null){
-                    Fine fine = fineRepository.findByPaymentIntentId(paymentResult.getPaymentIntentId())
+                    Fine fine = fineRepository.findById(paymentResult.getMetadata().get("fineId"))
                             .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
 
                     createPayment(
@@ -151,19 +103,69 @@ public class PaymentServiceImpl implements PaymentService {
                             PaymentType.FINE,
                             PaymentProvider.STRIPE,
                             null,
+                            null,
                             fine.getAmount(),
-                            PaymentStatus.FINE_FAILED,
+                            PaymentStatus.SUCCEEDED,
+                            paymentResult.getPaidAt());
+
+                }
+
+            } if (PaymentStatus.SUBSCRIPTION_SUCCEEDED ==  paymentResult.getPaymentStatus()) {
+                User user = userService.getUserById(paymentResult.getMetadata().get("userId"));
+                Subscription subscription = subscriptionRepository.findById(
+                        paymentResult.getMetadata().get("subscriptionId"))
+                        .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
+
+                if (SubscriptionStatus.PAYMENT_FAILED == subscription.getStatus()){
+                    subscription.setStatus(SubscriptionStatus.ACTIVE);
+                    subscription.setIsActive(true);
+                }
+                subscription.setStartDate(paymentResult.getSubscriptionDates().get("startDate"));
+                subscription.setEndDate(paymentResult.getSubscriptionDates().get("endDate"));
+                subscription = subscriptionRepository.save(subscription);
+
+                createPayment(
+                        user,
+                        subscription,
+                        null,
+                        PaymentType.SUBSCRIPTION,
+                        PaymentProvider.STRIPE,
+                        paymentResult.getCustomerId(),
+                        paymentResult.getInvoiceId(),
+                        subscription.getPrice(),
+                        PaymentStatus.SUBSCRIPTION_SUCCEEDED,
+                        paymentResult.getPaidAt());
+
+            }
+            if (PaymentStatus.FAILED ==  paymentResult.getPaymentStatus()) {
+                if (paymentResult.getCustomerId() == null){
+                    Fine fine = fineRepository.findById(paymentResult.getMetadata().get("fineId"))
+                            .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
+
+                    createPayment(
+                            fine.getUser(),
+                            null,
+                            fine,
+                            PaymentType.FINE,
+                            PaymentProvider.STRIPE,
+                            null,
+                            null,
+                            fine.getAmount(),
+                            PaymentStatus.FAILED,
                             paymentResult.getPaidAt()
                     );
+                    //TODO send email to notify client.
                 }
+                //TODO send notification when payment failed comes from subscription?
             }
             if (PaymentStatus.SUBSCRIPTION_FAILED ==  paymentResult.getPaymentStatus()) {
-                User foundUser = userService.findByCustomerId(paymentResult.getCustomerId());
-                Subscription sub = subscriptionService
-                        .findByCustomerIdAndStatus(paymentResult.getCustomerId(), SubscriptionStatus.ACTIVE);
-                sub.setStatus(SubscriptionStatus.PAYMENT_FAILED);
-                sub.setIsActive(false);
-                Subscription updatedSub = subscriptionRepository.save(sub);
+                User foundUser = userService.getUserById(paymentResult.getMetadata().get("userId"));
+                Subscription subscription = subscriptionRepository.findById(
+                                paymentResult.getMetadata().get("subscriptionId"))
+                        .orElseThrow(() -> new NotFoundException("Multa no encontrada"));
+                subscription.setStatus(SubscriptionStatus.PAYMENT_FAILED);
+                subscription.setIsActive(false);
+                Subscription updatedSub = subscriptionRepository.save(subscription);
 
                 //CREATE FAILED SUBSCRIPTION PAYMENT
                 createPayment(
@@ -173,11 +175,12 @@ public class PaymentServiceImpl implements PaymentService {
                         PaymentType.SUBSCRIPTION,
                         PaymentProvider.STRIPE,
                         paymentResult.getCustomerId(),
+                        paymentResult.getInvoiceId(),
                         updatedSub.getPrice(),
                         PaymentStatus.SUBSCRIPTION_FAILED,
                         paymentResult.getPaidAt()
-                );
-                //TODO notify by email
+                    );
+                //TODO notify by email, send link to change account details
 
             }
         });

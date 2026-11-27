@@ -143,7 +143,7 @@ public class BookLoanServiceImpl implements BookLoanService {
 
         BookLoanStatus status =  request.getStatus();
 
-        if (loan.getStatus().equals(BookLoanStatus.OVERDUE) || loan.getStatus().equals(BookLoanStatus.CHECKED_OUT)) {
+        if (status == null) {
             status = BookLoanStatus.RETURNED;
         }
 
