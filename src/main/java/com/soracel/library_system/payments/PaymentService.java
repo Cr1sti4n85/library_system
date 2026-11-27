@@ -20,6 +20,7 @@ public interface PaymentService {
                           PaymentType paymentType,
                           PaymentProvider provider,
                           String customerId,
+                          String invoiceId,
                           BigDecimal amount,
                           PaymentStatus status,
                           LocalDateTime paidAt

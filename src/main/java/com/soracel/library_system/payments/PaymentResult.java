@@ -19,6 +19,7 @@ public class PaymentResult {
     private String customerId;
     private Map<String, Long> metadata;
     private String paymentIntentId;
+    private String invoiceId;
     private LocalDateTime paidAt;
     private String subscriptionId;
     private Map<String, LocalDate> subscriptionDates;
